@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aurelia Studio — Silkframe example</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* A real page built from Silkframe effects — copy freely. */
+    :root { --bg: #070708; --text: #efe9df; --muted: #8f8a94; --accent: #ffb547; --line: rgba(255,255,255,.08);
+      --serif: 'Instrument Serif', serif; --sans: 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace; color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1200px, 100% - 40px); margin: 0 auto; }
+    .progress { position: fixed; inset: 0 0 auto; z-index: 50; padding: 0 16px; --sf-comet-h: 18px; }
+    header.top { position: fixed; top: 14px; left: 0; right: 0; z-index: 40; }
+    header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+    .logo { font-family: var(--serif); font-size: 26px; }
+    .cta { height: 46px; padding: 0 22px; border-radius: 99px; border: 0; background: var(--text); color: #0a0a0b; font: 600 14px var(--sans); cursor: pointer; --sf-mag-fill: var(--accent); }
+    .hero { min-height: 100svh; display: grid; align-content: center; padding: 120px 0 60px;
+      background: radial-gradient(50% 50% at 70% 40%, rgba(255,150,70,.14), transparent 70%), radial-gradient(40% 40% at 20% 75%, rgba(110,150,255,.1), transparent 70%); }
+    .eyebrow { font: 500 12px var(--mono); letter-spacing: .24em; text-transform: uppercase; color: var(--muted); }
+    .hero h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(52px, 10vw, 160px); line-height: .9; letter-spacing: -.035em; margin: 22px 0 0; max-width: 11ch; }
+    .hero h1 em { color: var(--accent); }
+    .hero p { max-width: 520px; color: var(--muted); font-size: 18px; line-height: 1.6; margin: 30px 0 0; }
+    .hero .row { display: flex; gap: 14px; margin-top: 36px; flex-wrap: wrap; }
+    .ghost { height: 46px; padding: 0 22px; border-radius: 99px; border: 1px solid rgba(255,255,255,.18); background: transparent; color: var(--text); font: 500 14px var(--sans); cursor: pointer; }
+    .ticker { padding: 26px 0; border-block: 1px solid var(--line); font-family: var(--serif); font-size: clamp(40px, 7vw, 96px); }
+    .ticker em { color: var(--accent); font-style: normal; font-size: .5em; vertical-align: middle; padding: 0 .4em; }
+    section { padding: 140px 0; }
+    .manifesto { font-family: var(--serif); font-size: clamp(30px, 4.6vw, 64px); line-height: 1.12; max-width: 20ch; margin: 0; }
+    .crumbs { font: 500 15px var(--sans); margin-bottom: 30px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+    .grid article { padding: 28px; border-radius: 18px; background: rgba(255,255,255,.025); box-shadow: inset 0 0 0 1px var(--line); }
+    .grid h3 { font-family: var(--serif); font-weight: 400; font-size: 30px; margin: 14px 0 6px; }
+    .grid p { margin: 0; color: var(--muted); line-height: 1.6; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+    .stats { display: grid; grid-template-columns: repeat(2, auto); gap: 40px 60px; justify-content: start; }
+    .stats b { display: block; font-family: var(--serif); font-weight: 400; font-size: 64px; line-height: 1; }
+    .stats span { font: 500 11px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+    .card { width: min(340px, 100%); aspect-ratio: 5/7; margin-left: auto; border-radius: 24px; padding: 28px; display: flex; flex-direction: column; justify-content: space-between;
+      background: radial-gradient(120% 80% at 0% 0%, #2a2440, transparent 60%), radial-gradient(100% 70% at 100% 100%, #3b1f2e, transparent 60%), linear-gradient(160deg, #141219, #0b0a0f); }
+    .card .k { font: 500 11px var(--mono); letter-spacing: .2em; text-transform: uppercase; opacity: .7; display: flex; justify-content: space-between; }
+    .card h4 { font-family: var(--serif); font-weight: 400; font-size: 44px; line-height: .92; margin: 0; }
+    .card h4 em { color: var(--accent); }
+    footer { padding: 160px 0 120px; text-align: center; border-top: 1px solid var(--line); }
+    footer h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(48px, 8vw, 120px); line-height: .95; letter-spacing: -.03em; margin: 0 0 40px; }
+    footer .cta { height: 58px; padding: 0 34px; font-size: 16px; }
+    @media (max-width: 800px) { .split { grid-template-columns: 1fr; } .card { margin: 0 auto; } }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <header class="top"><div class="wrap"><span class="logo">Aurelia</span><button class="cta" id="cta-top" data-cursor>Book a call</button></div></header>
+
+  <main>
+    <div class="hero"><div class="wrap">
+      <span class="eyebrow" id="eyebrow">Motion studio · Lisbon</span>
+      <h1 id="title" style="visibility:hidden">We give interfaces a <em>pulse.</em></h1>
+      <p>Aurelia designs the moments between the clicks — the easing, the weight, the beat of anticipation — for brands that want their product to feel expensive.</p>
+      <div class="row"><button class="cta" id="cta-hero" data-cursor>Start a project</button><button class="ghost" id="ghost" data-cursor>See the reel</button></div>
+    </div></div>
+
+    <div class="ticker" id="ticker"><span>Interfaces <em>✦</em> Launch films <em>✦</em> Product motion <em>✦</em> Design systems <em>✦</em>&nbsp;</span></div>
+
+    <section><div class="wrap">
+      <nav class="crumbs" id="crumbs"></nav>
+      <p class="manifesto" id="manifesto">Motion is a language. We write it frame by frame — timing that feels considered, physics that feels true, and choreography that turns a product into a place.</p>
+    </div></section>
+
+    <section><div class="wrap">
+      <div class="grid" id="grid">
+        <article><span>✦</span><h3>Interaction</h3><p>Springs, gestures and states that respond like real objects.</p></article>
+        <article><span>✦</span><h3>Launch films</h3><p>Product stories cut with the rhythm of a title sequence.</p></article>
+        <article><span>✦</span><h3>Systems</h3><p>Motion tokens your whole team can ship with confidence.</p></article>
+      </div>
+    </div></section>
+
+    <section><div class="wrap split">
+      <div class="stats">
+        <div><b id="s1">0</b><span>Launches</span></div>
+        <div><b id="s2">0</b><span>Awards</span></div>
+        <div><b id="s3">0</b><span>Frames tuned</span></div>
+        <div><b id="s4">0</b><span>Countries</span></div>
+      </div>
+      <div class="card" id="card"><div class="k"><span>Aurelia</span><span>Nº 0042</span></div><h4>Client<br><em>Circle</em></h4><div class="k"><span>Since 2019</span><span>Lisbon</span></div></div>
+    </div></section>
+  </main>
+
+  <footer><div class="wrap"><h2>Let's make it<br><em style="color:var(--accent)">move.</em></h2><button class="cta" id="final" data-cursor>Get in touch</button></div></footer>
+
+  <script type="module">
+    import { curtainLines } from '../src/text/curtain-lines.js';
+    import { signalDecode } from '../src/text/signal-decode.js';
+    import { scrollScrub } from '../src/text/scroll-scrub.js';
+    import { magneticButton } from '../src/ui/magnetic-button.js';
+    import { velocityMarquee } from '../src/ui/velocity-marquee.js';
+    import { scrollComet } from '../src/ui/scroll-comet.js';
+    import { morphCursor } from '../src/ui/morph-cursor.js';
+    import { odometer } from '../src/ui/odometer.js';
+    import { burstButton } from '../src/ui/burst-button.js';
+    import { liquidCrumbs } from '../src/breadcrumbs/liquid-crumbs.js';
+    import { spotlightGrid } from '../src/cards/spotlight-grid.js';
+    import { holoCard } from '../src/cards/holo-card.js';
+
+    await document.fonts.load('400 1em "Instrument Serif"');
+    await document.fonts.ready;
+
+    // Hero
+    const title = document.getElementById('title');
+    title.style.visibility = '';
+    curtainLines(title, { by: 'chars', stagger: 120, charStagger: 22, rotate: 9 }).play();
+    signalDecode('#eyebrow', { beam: false, glyphs: 'cipher', duration: 1300 }).play();
+    ['#cta-top', '#cta-hero', '#ghost', '#final'].forEach((s) => magneticButton(s));
+
+    // Global details
+    scrollComet('#progress');
+    morphCursor({ root: document.body });
+    velocityMarquee('#ticker', { speed: 50 });
+
+    // Story
+    liquidCrumbs('#crumbs', { items: ['Studio', 'Approach'] });
+    scrollScrub('#manifesto', { start: 0.9, end: 0.45 });
+    spotlightGrid('#grid', { color: '255,196,120', idle: false });
+    holoCard('#card');
+
+    // Stats count up when they scroll into view
+    const counters = [['#s1', 214], ['#s2', 37], ['#s3', 1284302], ['#s4', 19]].map(([s, v]) => [odometer(s, { value: 0 }), v]);
+    new IntersectionObserver(([e], io) => {
+      if (!e.isIntersecting) return;
+      counters.forEach(([o, v], i) => setTimeout(() => o.set(v), i * 160));
+      io.disconnect();
+    }, { threshold: 0.4 }).observe(document.querySelector('.stats'));
+
+    burstButton('#final');
+  </script>
+</body>
+</html>

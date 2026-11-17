@@ -1,0 +1,40 @@
+{
+  "name": "silkframe",
+  "version": "1.0.0",
+  "description": "Cinematic, zero-dependency web animations: text, transitions, cards, breadcrumbs and interface details.",
+  "type": "module",
+  "sideEffects": [
+    "./src/core/style.js",
+    "./src/**/*.js"
+  ],
+  "exports": {
+    "./core": "./src/core/index.js",
+    "./core/*": "./src/core/*.js",
+    "./text/*": "./src/text/*.js",
+    "./transitions/*": "./src/transitions/*.js",
+    "./cards/*": "./src/cards/*.js",
+    "./breadcrumbs/*": "./src/breadcrumbs/*.js",
+    "./ui/*": "./src/ui/*.js"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node serve.mjs 4173",
+    "test": "node tests/smoke.mjs",
+    "perf": "node tests/perf.mjs"
+  },
+  "keywords": [
+    "animation",
+    "motion",
+    "text-animation",
+    "page-transition",
+    "spring",
+    "breadcrumbs",
+    "cards",
+    "vanilla-js"
+  ],
+  "license": "UNLICENSED",
+  "private": true
+}

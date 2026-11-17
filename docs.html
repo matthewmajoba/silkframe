@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Silkframe — Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gallery/gallery.css">
+  <style>
+    .docs { width: min(1080px, 100% - 48px); margin: 0 auto; padding: 120px 0 120px; }
+    .docs h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(44px, 6vw, 84px); line-height: 0.95; letter-spacing: -0.03em; margin: 0 0 18px; }
+    .docs h2 { font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 3.4vw, 44px); letter-spacing: -0.02em; margin: 72px 0 18px; padding-top: 28px; border-top: 1px solid var(--line); }
+    .docs h2 code, .docs h1 code { font-size: 0.55em; vertical-align: middle; }
+    .docs h3 { font-family: var(--font-display); font-weight: 400; font-size: 26px; margin: 40px 0 12px; }
+    .docs p, .docs li { color: #cbc6ce; line-height: 1.7; }
+    .docs blockquote { margin: 0 0 24px; padding: 12px 18px; border-left: 2px solid var(--accent); color: var(--muted); background: rgba(255, 255, 255, 0.02); border-radius: 0 10px 10px 0; }
+    .docs blockquote p { margin: 0; color: inherit; }
+    .docs a { color: var(--accent); }
+    .docs code { font-family: var(--font-mono); font-size: 0.86em; padding: 2px 6px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); color: #f1e3cd; }
+    .docs pre { margin: 18px 0; padding: 18px 20px; border-radius: 14px; background: var(--bg-2); border: 1px solid var(--line); overflow-x: auto; }
+    .docs pre code { padding: 0; background: none; color: #cfcad2; font-size: 13px; line-height: 1.75; }
+    .docs .table { overflow-x: auto; margin: 18px 0; border: 1px solid var(--line); border-radius: 14px; }
+    .docs table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .docs th, .docs td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    .docs th { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: rgba(255, 255, 255, 0.02); }
+    .docs tr:last-child td { border-bottom: 0; }
+    .docs td strong { color: var(--text); font-weight: 600; }
+    .docs hr { border: 0; border-top: 1px solid var(--line); margin: 48px 0; }
+    .docs-top { position: fixed; inset: 0 0 auto; z-index: 20; display: flex; justify-content: space-between; align-items: center; padding: 18px 24px;
+      background: linear-gradient(to bottom, rgba(5, 5, 6, 0.95), transparent); }
+  </style>
+</head>
+<body>
+  <div class="docs-top"><a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>Silkframe<small>Docs</small></a><a class="btn" href="index.html">Back to the library</a></div>
+  <main class="docs" id="docs"><p>Loading documentation…</p></main>
+  <script type="module">
+    import { highlight, escapeHTML } from './gallery/ui.js';
+    // Minimal Markdown renderer for the README: headings, paragraphs, lists,
+    // tables, fenced code, blockquotes, inline code/bold/italic/links.
+    const inline = (s) =>
+      escapeHTML(s)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    function render(md) {
+      const lines = md.replace(/\r/g, '').split('\n');
+      let html = '';
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith('```')) {
+          const buf = [];
+          for (i++; i < lines.length && !lines[i].startsWith('```'); i++) buf.push(lines[i]);
+          html += `<pre><code>${highlight(buf.join('\n'))}</code></pre>`;
+        } else if (/^#{1,3} /.test(line)) {
+          const n = line.match(/^#+/)[0].length;
+          html += `<h${n}>${inline(line.slice(n + 1))}</h${n}>`;
+        } else if (line.startsWith('|')) {
+          const rows = [];
+          for (; i < lines.length && lines[i].startsWith('|'); i++) rows.push(lines[i]);
+          i--;
+          const cells = (r) => r.slice(1, -1).split(/(?<!\\)\|/).map((c) => c.trim());
+          const [head, , ...body] = rows;
+          html += `<div class="table"><table><thead><tr>${cells(head).map((c) => `<th>${inline(c)}</th>`).join('')}</tr></thead><tbody>${body
+            .map((r) => `<tr>${cells(r).map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`)
+            .join('')}</tbody></table></div>`;
+        } else if (/^- /.test(line)) {
+          const items = [];
+          for (; i < lines.length && /^- /.test(lines[i]); i++) items.push(lines[i].slice(2));
+          i--;
+          html += `<ul>${items.map((x) => `<li>${inline(x)}</li>`).join('')}</ul>`;
+        } else if (line.startsWith('> ')) {
+          html += `<blockquote><p>${inline(line.slice(2))}</p></blockquote>`;
+        } else if (/^---+$/.test(line.trim())) {
+          /* section rules come from the h2 border */
+        } else if (line.trim()) {
+          const buf = [line];
+          for (i++; i < lines.length && lines[i].trim() && !/^(#|\||- |> |```)/.test(lines[i]); i++) buf.push(lines[i]);
+          i--;
+          html += `<p>${inline(buf.join(' '))}</p>`;
+        }
+      }
+      return html;
+    }
+    const res = await fetch('README.md');
+    document.getElementById('docs').innerHTML = render(await res.text());
+  </script>
+</body>
+</html>

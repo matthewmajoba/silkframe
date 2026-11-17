@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Silkframe — Cinematic Motion Library</title>
+  <meta name="description" content="A zero-dependency library of cinematic web animations: text, transitions, card effects, breadcrumbs and interface details.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Instrument+Serif:ital@0;1&family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="gallery/gallery.css">
+  <link rel="stylesheet" href="gallery/demos-cards.css">
+  <link rel="stylesheet" href="gallery/demos-crumbs.css">
+  <link rel="stylesheet" href="gallery/demos-ui.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="topbar wrap">
+      <a class="brand" href="#"><span class="brand-mark" aria-hidden="true"></span>Silkframe<small>Vol. 01</small></a>
+      <nav aria-label="Primary">
+        <a href="#library">Library</a>
+        <a href="docs.html">Documentation</a>
+        <a href="examples/landing.html">Example site</a>
+        <a href="view.html">Theatre mode</a>
+      </nav>
+    </div>
+    <div class="hero-visual" aria-hidden="true"><div class="hero-ring">Silkframe · Cinematic motion · Volume 01</div></div>
+    <div class="hero-inner wrap">
+      <p class="eyebrow"><span>Cinematic motion library</span></p>
+      <h1 class="hero-title" style="visibility:hidden">Motion with a sense of <em>cinema.</em></h1>
+      <p class="hero-sub">Text, transitions, surfaces and wayfinding — each effect tuned frame by frame with real spring physics and filmic easing. Zero dependencies. Drop in one module, get the whole feeling.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#library">Explore the library</a>
+        <a class="btn" href="view.html">Enter theatre mode</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><b id="stat-total">0</b><span>Effects</span></div>
+        <div class="stat"><b id="stat-cats">0</b><span>Categories</span></div>
+        <div class="stat"><b>0</b><span>Dependencies</span></div>
+        <div class="stat"><b>240<small style="font-size:.4em">Hz</small></b><span>Physics step</span></div>
+      </div>
+      <div class="scroll-cue" aria-hidden="true"><i></i>Scroll</div>
+    </div>
+  </header>
+
+  <nav class="catnav" aria-label="Categories">
+    <div class="catnav-inner wrap">
+      <div class="pills" id="pills"></div>
+      <span class="catnav-meta" id="catnav-meta"></span>
+    </div>
+  </nav>
+
+  <main id="library"></main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p class="footer-big">Every frame,<br><em>considered.</em></p>
+      <div class="footer-row">
+        <span>Silkframe · Volume 01</span>
+        <span>Vanilla ES modules · No build step</span>
+        <span>Respects prefers-reduced-motion</span>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module" src="gallery/gallery.js"></script>
+</body>
+</html>

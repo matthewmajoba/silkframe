@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Silkframe smoke test</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,100..900&family=Instrument+Serif:ital@0;1&family=Inter:wght@300..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../gallery/gallery.css">
+  <link rel="stylesheet" href="../gallery/demos-cards.css">
+  <link rel="stylesheet" href="../gallery/demos-crumbs.css">
+  <link rel="stylesheet" href="../gallery/demos-ui.css">
+<style>
+  body { padding: 20px; }
+  .cell { width: 640px; margin-bottom: 12px; }
+  #log { font: 12px/1.5 var(--font-mono); white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<pre id="log">running…</pre>
+<div class="cell"><div class="fx-stage"><div class="stage" id="stage"></div></div></div>
+<script type="module">
+  import { demos } from '../gallery/demos/index.js';
+  import { mountDemo } from '../gallery/ui.js';
+  import { fontsReady } from '../gallery/fonts.js';
+  const log = document.getElementById('log');
+  const stage = document.getElementById('stage');
+  const results = [];
+  const errors = [];
+  addEventListener('error', (e) => errors.push(e.message));
+  addEventListener('unhandledrejection', (e) => errors.push(String(e.reason && (e.reason.stack || e.reason))));
+  const origError = console.error;
+  console.error = (...a) => { errors.push(a.map(String).join(' ')); origError(...a); };
+  await fontsReady;
+  const only = new URLSearchParams(location.search).get('only');
+  for (const d of demos) {
+    if (only && !only.split(',').includes(d.id)) continue;
+    errors.length = 0;
+    __sf.freeze();
+    const t0 = performance.now();
+    const off = mountDemo(d, stage);
+    let worst = 0;
+    for (let i = 0; i < 180; i++) {
+      const a = performance.now();
+      __sf.step(1000 / 60);
+      worst = Math.max(worst, performance.now() - a);
+    }
+    await new Promise((r) => setTimeout(r, 50));
+    off();
+    __sf.thaw();
+    results.push(`${errors.length ? 'FAIL' : 'ok  '} ${d.id.padEnd(22)} worst-frame ${worst.toFixed(2)}ms ${errors.length ? '\n     ' + errors.join('\n     ') : ''}`);
+  }
+  log.textContent = results.join('\n');
+  window.__done = results;
+</script>
+</body>
+</html>
