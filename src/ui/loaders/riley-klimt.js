@@ -27,32 +27,53 @@ function goldLeaf(W, H, ratio) {
   g.fillStyle = base;
   g.fillRect(0, 0, W, H);
   const r = mulberry32(21);
-  // beaten leaf: soft overlapping squares of slightly different gold
-  for (let i = 0; i < 260; i++) {
-    const s = 18 + r() * 60;
-    g.globalAlpha = 0.12 + r() * 0.16;
-    g.fillStyle = r() < 0.5 ? '#f3d683' : '#8f6418';
-    g.fillRect(r() * W - s / 2, r() * H - s / 2, s, s);
+  // Gold leaf is laid in square sheets: a slightly irregular grid, each sheet
+  // its own tone, edges overlapping in faint darker seams.
+  const leaf = Math.max(W, H) / 11;
+  for (let y = -leaf * 0.5; y < H + leaf; y += leaf) {
+    for (let x = -leaf * 0.5 + (Math.round(y / leaf) % 2) * leaf * 0.18; x < W + leaf; x += leaf) {
+      const jx = (r() - 0.5) * leaf * 0.08, jy = (r() - 0.5) * leaf * 0.08;
+      const tone = r();
+      const sheet = g.createLinearGradient(x, y, x + leaf, y + leaf);
+      sheet.addColorStop(0, tone < 0.5 ? 'rgba(246,214,120,.28)' : 'rgba(120,80,20,.16)');
+      sheet.addColorStop(1, tone < 0.5 ? 'rgba(200,150,50,.08)' : 'rgba(250,222,140,.18)');
+      g.fillStyle = sheet;
+      g.fillRect(x + jx, y + jy, leaf * 1.02, leaf * 1.02);
+      g.strokeStyle = 'rgba(90,60,15,.18)';
+      g.lineWidth = 0.8;
+      g.strokeRect(x + jx + 0.5, y + jy + 0.5, leaf * 1.02, leaf * 1.02);
+    }
   }
-  // Klimt tesserae: tiny squares and spirals
-  g.globalAlpha = 1;
-  for (let i = 0; i < 140; i++) {
-    const s = 3 + r() * 6;
-    const x = r() * W, y = r() * H;
-    const pick = r();
-    g.fillStyle = pick < 0.5 ? '#1c140a' : pick < 0.75 ? '#f6ecd0' : '#7a2f1c';
+  // Fine burnish: a few long, soft strokes of light.
+  for (let i = 0; i < 9; i++) {
+    const y = r() * H;
+    const band = g.createLinearGradient(0, y - 40, 0, y + 40);
+    band.addColorStop(0, 'rgba(255,240,190,0)');
+    band.addColorStop(0.5, 'rgba(255,240,190,.12)');
+    band.addColorStop(1, 'rgba(255,240,190,0)');
+    g.fillStyle = band;
+    g.fillRect(0, y - 40, W, 80);
+  }
+  // Klimt mosaic: tesserae gathered in a few patches, not scattered noise.
+  const patches = Array.from({ length: 5 }, () => [r() * W, r() * H, 40 + r() * 70]);
+  for (const [px, py, pr] of patches) {
+    for (let i = 0; i < 46; i++) {
+      const a = r() * Math.PI * 2, d = Math.sqrt(r()) * pr;
+      const x = px + Math.cos(a) * d, y = py + Math.sin(a) * d;
+      const s = 3 + r() * 5;
+      const pick = r();
+      g.globalAlpha = 0.78;
+      g.fillStyle = pick < 0.45 ? '#1c140a' : pick < 0.72 ? '#f6ecd0' : pick < 0.88 ? '#7a2f1c' : '#2f4f6f';
+      g.fillRect(Math.round(x), Math.round(y), s, s);
+    }
+    // a spiral at the heart of each patch
     g.globalAlpha = 0.55;
-    g.fillRect(x, y, s, s);
-  }
-  g.strokeStyle = '#3b2a0f';
-  g.lineWidth = 1;
-  for (let i = 0; i < 26; i++) {
-    const x = r() * W, y = r() * H, R = 6 + r() * 10;
-    g.globalAlpha = 0.4;
+    g.strokeStyle = '#3b2a0f';
+    g.lineWidth = 1.2;
     g.beginPath();
-    for (let a = 0; a < Math.PI * 5; a += 0.2) {
-      const rr = (R * a) / (Math.PI * 5);
-      g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    for (let a = 0; a < Math.PI * 6; a += 0.15) {
+      const rr = (pr * 0.32 * a) / (Math.PI * 6);
+      g.lineTo(px + Math.cos(a) * rr, py + Math.sin(a) * rr);
     }
     g.stroke();
   }

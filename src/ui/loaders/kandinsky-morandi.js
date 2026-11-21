@@ -25,7 +25,10 @@ const scene = {
     s.data = {
       grain: s.data.grain || grainTile(160, 9, 0.5),
       circles: Array.from({ length: 10 }, (_, i) => ({
-        orbit: 0.08 + r() * 0.3,
+        // each circle drifts around its own anchor, spread across the canvas
+        ax: i === 0 ? 0.6 : 0.16 + r() * 0.68,
+        ay: i === 0 ? 0.42 : 0.16 + r() * 0.56,
+        orbit: 0.02 + r() * 0.05,
         ecc: 0.55 + r() * 0.4,
         speed: (0.08 + r() * 0.16) * (r() < 0.5 ? -1 : 1),
         phase: r() * Math.PI * 2,
@@ -71,8 +74,9 @@ const scene = {
     ctx.stroke();
     ctx.globalAlpha = 1;
 
-    // Circles: orbit, breathe on their beat, gather on completion.
-    const sorted = [...d.circles].sort((a, b) => b.size - a.size);
+    // Circles: drift, breathe on their beat, gather on completion.
+    // Concentric order when gathered: colours largest-first, charcoal at the centre.
+    const sorted = [...d.circles].sort((a, b) => (a.color === CHARCOAL) - (b.color === CHARCOAL) || b.size - a.size);
     for (const c of d.circles) {
       const period = BEAT * c.beat;
       const ph = ((t + c.offset * period) % period) / period;
@@ -82,12 +86,12 @@ const scene = {
     }
     sorted.forEach((c, rank) => {
       const a = c.phase + t * c.speed;
-      let x = cx + Math.cos(a) * c.orbit * S;
-      let y = cy + Math.sin(a) * c.orbit * S * c.ecc;
+      let x = W * c.ax + Math.cos(a) * c.orbit * S;
+      let y = H * c.ay + Math.sin(a) * c.orbit * S * c.ecc;
       // gathered: concentric, largest at the back
       x = lerp(x, cx, gather);
       y = lerp(y, cy, gather);
-      const finalR = (0.24 - rank * 0.021) * S;
+      const finalR = (0.27 - (rank / (sorted.length - 1)) * 0.23) * S;
       let r = lerp(c.size * S, finalR, gather);
       const chord = done > 0.7 ? Math.sin(Math.PI * clamp((done - 0.7) / 0.3)) * 0.06 : 0;
       r *= 1 + c.pulse * 0.07 + chord;
@@ -98,12 +102,12 @@ const scene = {
       halo.addColorStop(1, 'rgba(255,250,240,0)');
       ctx.fillStyle = halo;
       ctx.beginPath(); ctx.arc(x, y, r * 1.45, 0, Math.PI * 2); ctx.fill();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.globalAlpha = c.color === CHARCOAL ? 0.92 : 0.78;
+      // Translucent paint while drifting; solid rings once gathered (a
+      // multiply stack of ten discs would sink into a black bullseye).
+      ctx.globalAlpha = lerp(c.color === CHARCOAL ? 0.88 : 0.66, 1, gather);
       ctx.fillStyle = c.color;
       ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
       ctx.globalAlpha = 1;
-      ctx.globalCompositeOperation = 'source-over';
     });
 
     // Stave: progress as a line of notes.

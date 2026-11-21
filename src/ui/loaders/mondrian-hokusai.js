@@ -49,7 +49,8 @@ const scene = {
     ctx.fillRect(0, 0, W, H);
 
     // Which cells has progress reached?
-    const reached = Math.floor(p * CELLS.length + 1e-6);
+    // ceil: the last cell starts flooding at ~89%, finished before the finale
+    const reached = Math.ceil(p * CELLS.length - 0.001);
     ORDER.forEach((ci, k) => {
       if (k < reached && d.start[ci] < 0) d.start[ci] = t;
     });
@@ -120,29 +121,63 @@ const scene = {
       ctx.restore();
     });
 
-    // The great wave on completion: one crest across everything.
+    // The great wave on completion: a Prussian-blue body with a curling,
+    // foam-clawed crest rolls across the whole composition and out.
     if (done > 0) {
-      const g = ease.inOut(clamp(done / 0.8));
-      const fx = ox - S * 0.3 + g * S * 1.6;
+      const g = ease.inOut(clamp((done - 0.18) / 0.78)); // a breath, then the wave
+      const body = S * 0.34;
+      const fx = ox - S * 0.35 + g * (S * 1.55 + body); // starts fully outside the frame
+      const foamA = 1 - smoothstep(ox + S * 0.8, ox + S * 1.1, fx); // foam fades as it leaves
+      const edge = (k) => fx + Math.pow(1 - k, 2.6) * S * 0.16 + Math.sin(k * 8 + t * 4) * S * 0.008;
       ctx.save();
       ctx.beginPath();
       ctx.rect(ox, oy, S, S);
       ctx.clip();
-      const grad = ctx.createLinearGradient(fx - S * 0.25, 0, fx, 0);
-      grad.addColorStop(0, 'rgba(251,248,240,0)');
-      grad.addColorStop(0.75, 'rgba(251,248,240,.55)');
-      grad.addColorStop(1, 'rgba(251,248,240,.95)');
+      const grad = ctx.createLinearGradient(fx - body, 0, fx + S * 0.1, 0);
+      grad.addColorStop(0, 'rgba(22,44,86,0)');
+      grad.addColorStop(0.35, 'rgba(22,44,86,.85)');
+      grad.addColorStop(1, 'rgba(30,62,112,.95)');
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.moveTo(fx - S * 0.25, oy);
-      for (let j = 0; j <= 20; j++) {
-        const k = j / 20;
-        const yy = oy + S * k;
-        ctx.lineTo(fx + Math.pow(1 - k, 3) * S * 0.12 + Math.sin(k * 9 + t * 5) * S * 0.01, yy);
-      }
-      ctx.lineTo(fx - S * 0.25, oy + S);
+      ctx.moveTo(fx - body, oy);
+      for (let j = 0; j <= 24; j++) ctx.lineTo(edge(j / 24), oy + S * (j / 24));
+      ctx.lineTo(fx - body, oy + S);
       ctx.closePath();
       ctx.fill();
+      // Inner seigaiha lines on the wave body.
+      ctx.strokeStyle = 'rgba(220,232,245,.22)';
+      ctx.lineWidth = Math.max(0.8, S * 0.003);
+      for (let j = 1; j <= 5; j++) {
+        ctx.beginPath();
+        for (let q = 0; q <= 24; q++) {
+          const k = q / 24;
+          const x = edge(k) - j * S * 0.045;
+          q ? ctx.lineTo(x, oy + S * k) : ctx.moveTo(x, oy + S * k);
+        }
+        ctx.stroke();
+      }
+      // Foam: a white lip along the front, claws curling over at the crest.
+      ctx.globalAlpha = foamA;
+      ctx.strokeStyle = '#fbf8f0';
+      ctx.lineWidth = Math.max(2, S * 0.012);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let q = 0; q <= 24; q++) {
+        const k = q / 24;
+        q ? ctx.lineTo(edge(k), oy + S * k) : ctx.moveTo(edge(k), oy + S * k);
+      }
+      ctx.stroke();
+      ctx.fillStyle = '#fbf8f0';
+      for (let j = 0; j < 9; j++) {
+        const k = j / 9 * 0.42;
+        const x = edge(k), y = oy + S * k;
+        const r = S * (0.022 - k * 0.03);
+        if (r <= 0) continue;
+        ctx.beginPath();
+        ctx.arc(x + r * 0.6, y - r * 0.2, r, Math.PI * 0.6, Math.PI * 2.1);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
       ctx.restore();
     }
 

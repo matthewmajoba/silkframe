@@ -29,21 +29,21 @@ const SHAPES = [
 function build() {
   const arm = (a, b, left, right, h) => ({ a, b, left, right, h, th: 0, w: 0 });
   // root ── left: arm1, right: disc ; arm1 ── left: crescent, right: arm2 ; arm2 ── left: star, right: arm3 ; arm3 ── blob / eye
-  const arm3 = arm(0.09, 0.11, { shape: 3 }, { shape: 4 }, 0.12);
-  const arm2 = arm(0.12, 0.13, { shape: 2 }, { arm: arm3 }, 0.12);
-  const arm1 = arm(0.14, 0.17, { shape: 1 }, { arm: arm2 }, 0.13);
-  return arm(0.24, 0.16, { arm: arm1 }, { shape: 0 }, 0.14);
+  const arm3 = arm(0.09, 0.11, { shape: 3 }, { shape: 4 }, 0.1);
+  const arm2 = arm(0.12, 0.13, { shape: 2 }, { arm: arm3 }, 0.1);
+  const arm1 = arm(0.14, 0.17, { shape: 1 }, { arm: arm2 }, 0.11);
+  return arm(0.24, 0.16, { arm: arm1 }, { shape: 0 }, 0.12);
 }
 
 const scene = {
   outro: 2200,
   setup(s) {
-    s.data = { root: build(), born: SHAPES.map(() => -1), grain: s.data.grain || grainTile(160, 4, 0.55), gusted: false };
+    s.data = { root: build(), born: SHAPES.map(() => -1), grain: s.data.grain || grainTile(160, 4, 0.55), gusted: false }; // fresh arms → fresh grow-in
   },
   draw(ctx, s) {
     const { W, H, t, dt, p, done } = s;
     const d = s.data;
-    const S = Math.min(W, H);
+    const S = Math.min(W, H) * 0.92; // the whole mobile fits the frame at any tilt
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
     const light = ctx.createRadialGradient(W * 0.3, H * 0.1, 0, W * 0.5, H * 0.5, Math.max(W, H));
@@ -60,14 +60,19 @@ const scene = {
       if (node.shape !== undefined) return d.born[node.shape] >= 0 ? 1 + SHAPES[node.shape].size * 6 : 0;
       return weight(node.arm);
     };
-    const weight = (arm) => 0.15 + mass(arm.left) + mass(arm.right);
+    const weight = (arm) => (alive({ arm }) ? 0.5 : 0) + mass(arm.left) + mass(arm.right);
+    // An arm exists once anything below it has been hung.
+    function alive(node) {
+      if (node.shape !== undefined) return d.born[node.shape] >= 0;
+      return alive(node.arm.left) || alive(node.arm.right);
+    }
 
     // Physics: each arm swings toward the angle that balances its torques.
     const gust = done > 0 && !d.gusted;
     if (gust) d.gusted = true;
     const stepArm = (arm, depth) => {
       const mL = mass(arm.left), mR = mass(arm.right);
-      const eq = clamp(Math.atan2(mR * arm.b - mL * arm.a, 0.22), -0.6, 0.6) * (1 - ease.smooth(clamp(done * 1.4 - 0.4)));
+      const eq = clamp(Math.atan2(mR * arm.b - mL * arm.a, 0.5), -0.34, 0.34) * (1 - ease.smooth(clamp(done * 1.4 - 0.4)));
       const breeze = noise2(t * 0.35 + depth * 7, depth * 3.1) * 0.9;
       arm.w += (-(arm.th - eq) * 11 - arm.w * 1.25 + breeze) * dt;
       if (gust) arm.w += (depth % 2 ? -1 : 1) * (3.2 - depth * 0.4);
@@ -123,16 +128,18 @@ const scene = {
       ctx.restore();
     };
     const drawArm = (arm, px, py) => {
+      if (arm.born === undefined) arm.born = t;
+      const grow = ease.back(clamp((t - arm.born) / 0.6)); // new arms extend into place
       const ca = Math.cos(arm.th), sa = Math.sin(arm.th);
-      const lx = px - arm.a * S * ca, ly = py - arm.a * S * sa;
-      const rx = px + arm.b * S * ca, ry = py + arm.b * S * sa;
+      const lx = px - arm.a * S * ca * grow, ly = py - arm.a * S * sa * grow;
+      const rx = px + arm.b * S * ca * grow, ry = py + arm.b * S * sa * grow;
       ctx.strokeStyle = INK;
       ctx.lineWidth = Math.max(1.6, S * 0.0055);
       ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(rx, ry); ctx.stroke();
       // tiny hooked ends, like bent wire
       ctx.lineWidth = Math.max(1, S * 0.003);
       [[lx, ly, arm.left], [rx, ry, arm.right]].forEach(([x, y, child]) => {
-        if (child.shape !== undefined && d.born[child.shape] < 0) return;
+        if (!alive(child)) return;
         const h = arm.h * S;
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.stroke();
         if (child.arm) drawArm(child.arm, x, y + h);
@@ -141,7 +148,7 @@ const scene = {
       ctx.fillStyle = INK;
       ctx.beginPath(); ctx.arc(px, py, Math.max(1.6, S * 0.005), 0, Math.PI * 2); ctx.fill();
     };
-    const rootY = H * 0.17;
+    const rootY = H * 0.12;
     ctx.strokeStyle = INK;
     ctx.lineWidth = Math.max(1, S * 0.003);
     ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(top.x, rootY); ctx.stroke();
