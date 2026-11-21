@@ -15,11 +15,11 @@ import { svg, uniqueId, resolve, clamp } from '../core/utils.js';
 
 injectStyle(
   'sf-gooey',
-  `.sf-gt{position:relative;display:inline-flex;padding:.35em;border-radius:99px;background:var(--sf-gt-bg,rgba(255,255,255,.05));
+  `:where(.sf-gt){position:relative}.sf-gt{display:inline-flex;padding:.35em;border-radius:99px;background:var(--sf-gt-bg,rgba(255,255,255,.05));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);isolation:isolate}
 .sf-gt-goo{position:absolute;inset:0;pointer-events:none}
 .sf-gt-goo>i{position:absolute;left:0;top:.35em;height:calc(100% - .7em);border-radius:99px;background:var(--sf-gt-blob,#f1ebe1);will-change:transform,width}
-.sf-gt-tab{position:relative;z-index:1;background:none;border:0;font:inherit;padding:.62em 1.25em;border-radius:99px;cursor:pointer;
+:where(.sf-gt-tab){position:relative}.sf-gt-tab{z-index:1;background:none;border:0;font:inherit;padding:.62em 1.25em;border-radius:99px;cursor:pointer;
   color:#fff;mix-blend-mode:difference;white-space:nowrap}
 .sf-gt-defs{position:absolute;width:0;height:0;overflow:hidden}`
 );

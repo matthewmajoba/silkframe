@@ -14,7 +14,7 @@ import { resolve } from '../core/utils.js';
 
 injectStyle(
   'sf-aurora',
-  `.sf-aurora{position:relative;isolation:isolate}
+  `:where(.sf-aurora){position:relative}.sf-aurora{isolation:isolate}
 .sf-aurora-ring,.sf-aurora-glow,.sf-aurora-spot{position:absolute;inset:calc(var(--sf-aw,1.5px) * -1);border-radius:inherit;pointer-events:none}
 .sf-aurora-ring,.sf-aurora-spot{padding:var(--sf-aw,1.5px);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;

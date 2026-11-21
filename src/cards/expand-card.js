@@ -16,8 +16,10 @@ import { prefersReducedMotion } from '../core/utils.js';
 
 injectStyle(
   'sf-portal',
-  `.sf-portal{position:absolute;inset:0;z-index:40;overflow:hidden;visibility:hidden}
-.sf-portal [data-portal-rise]{will-change:transform,opacity}`
+  `.sf-portal{position:absolute;inset:0;z-index:40;overflow:hidden;visibility:hidden;will-change:clip-path}
+.sf-portal [data-portal-rise]{will-change:transform,opacity}
+.sf-portal [data-portal-hero]{will-change:transform}
+.sf-portal-dim{position:absolute;inset:0;z-index:39;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;will-change:opacity}`
 );
 
 const DEFAULTS = {
@@ -30,6 +32,13 @@ export function expandCard(container, options = {}) {
   const o = { ...DEFAULTS, ...options };
   ensurePositioned(container);
   let state = null; // { card, detail, anims }
+  // Siblings recede under a dimmer (opacity only) instead of an animated
+  // blur filter — filters re-rasterise every frame and cause hitches.
+  const dim = document.createElement('div');
+  dim.className = 'sf-portal-dim';
+  dim.setAttribute('aria-hidden', 'true');
+  container.appendChild(dim);
+  const frames = (n) => new Promise((r) => { const step = () => (n-- > 0 ? requestAnimationFrame(step) : r()); step(); });
 
   const radius = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius) || 0;
   const insetFor = (box, W, H, r) =>
@@ -75,13 +84,13 @@ export function expandCard(container, options = {}) {
     sibs.forEach((s) => {
       if (s === card) return;
       anims.push(s.animate(
-        [
-          { transform: 'none', filter: 'blur(0px) brightness(1)', opacity: 1 },
-          { transform: `scale(${o.recede})`, filter: 'blur(3px) brightness(0.6)', opacity: 0.55 },
-        ],
+        [{ transform: 'none' }, { transform: `scale(${o.recede})` }],
         { duration: D, easing: ease, fill: 'both', direction: opening ? 'normal' : 'reverse' }
       ));
     });
+    anims.push(dim.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: D * 0.8, easing: 'ease-out', fill: 'both', direction: opening ? 'normal' : 'reverse',
+    }));
     // Hide the source card while its stand-in is in flight.
     card.style.visibility = 'hidden';
     return anims;
@@ -96,7 +105,14 @@ export function expandCard(container, options = {}) {
       state = { card, detail, anims: [] };
       return true;
     }
+    // Paint the detail (still clipped to the card) before the clock starts,
+    // so layer creation never lands inside an animated frame.
+    const box = boxIn(card, container);
+    detail.style.clipPath = insetFor(box, container.clientWidth, container.clientHeight, radius(card));
+    detail.style.visibility = 'visible';
+    await frames(2);
     const anims = choreograph(card, detail, true);
+    detail.style.clipPath = '';
     state = { card, detail, anims };
     await Promise.all(anims.map((a) => a.finished)).catch(() => {});
     return true;
@@ -129,6 +145,7 @@ export function expandCard(container, options = {}) {
       state?.anims.forEach((a) => a.cancel());
       if (state) state.card.style.visibility = '';
       state = null;
+      dim.remove();
     },
   };
 }

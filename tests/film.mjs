@@ -38,7 +38,7 @@ const actions = Object.fromEntries(
 mkdirSync(out, { recursive: true });
 
 const steps = [
-  { goto: `http://localhost:4173/view.html?fx=${id}` },
+  { goto: `http://localhost:4180/view.html?fx=${id}` },
   { wait: 1200 },
   { eval: `__view.frame('${id}', 0)` },
 ];

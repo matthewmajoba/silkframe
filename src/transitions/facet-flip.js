@@ -15,7 +15,7 @@ import { prefersReducedMotion } from '../core/utils.js';
 injectStyle(
   'sf-facets',
   `.sf-facets{position:absolute;pointer-events:none;z-index:40;display:flex}
-.sf-facet{position:relative;flex:1 1 0;transform-style:preserve-3d;will-change:transform}
+:where(.sf-facet){position:relative}.sf-facet{flex:1 1 0;transform-style:preserve-3d;will-change:transform}
 .sf-facet-face{position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .sf-facet-face.back{transform:rotateY(180deg)}
 .sf-facet-face>.sf-facet-copy{position:absolute;top:0;margin:0}
@@ -70,6 +70,9 @@ export function facetFlip(container, options = {}) {
       const faces = [from, to].map((src, side) => {
         const face = document.createElement('div');
         face.className = `sf-facet-face${side ? ' back' : ''}`;
+        // The back face is pre-turned around the SAME axis the facet turns on,
+        // otherwise horizontal blinds reveal the next scene mirrored.
+        if (side) face.style.transform = vertical ? 'rotateY(180deg)' : 'rotateX(180deg)';
         // Faces overlap their neighbours by a sub-pixel so fractional strip
         // boundaries never show anti-aliased seams.
         const bleed = 0.75;
@@ -84,6 +87,11 @@ export function facetFlip(container, options = {}) {
         copy.style.visibility = 'visible';
         const shade = document.createElement('div');
         shade.className = 'sf-facet-shade';
+        if (!vertical) {
+          shade.style.background = side
+            ? 'linear-gradient(0deg,rgba(0,0,0,.75),rgba(0,0,0,.15) 55%,rgba(255,255,255,.08))'
+            : 'linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,.15) 55%,rgba(255,255,255,.08))';
+        }
         face.append(copy, shade);
         facet.appendChild(face);
         return { face, shade };

@@ -21,7 +21,7 @@
     "README.md"
   ],
   "scripts": {
-    "start": "node serve.mjs 4173",
+    "start": "node serve.mjs 4180",
     "test": "node tests/smoke.mjs",
     "perf": "node tests/perf.mjs"
   },

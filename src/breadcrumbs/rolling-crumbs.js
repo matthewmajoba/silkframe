@@ -18,7 +18,7 @@ injectStyle(
 .sf-rl ol{display:flex;align-items:center;margin:0;padding:0;list-style:none}
 .sf-rl li{display:flex;align-items:center;white-space:nowrap}
 .sf-rl-sep{opacity:.35;padding:0 .55em}
-.sf-rl-slot{position:relative;display:inline-block;overflow:hidden;vertical-align:bottom;height:1.4em;line-height:1.4em;
+:where(.sf-rl-slot){position:relative}.sf-rl-slot{display:inline-block;overflow:hidden;vertical-align:bottom;height:1.4em;line-height:1.4em;
   padding:0 .05em;margin:-.1em 0;color:var(--sf-rl-fg,rgba(255,255,255,.6))}
 .sf-rl li:last-child .sf-rl-slot{color:var(--sf-rl-active,#fff)}
 .sf-rl-word{position:absolute;left:.05em;top:0;white-space:nowrap;will-change:transform,filter}

@@ -12,6 +12,7 @@
 import { injectStyle } from '../core/style.js';
 import { resolve, prefersReducedMotion } from '../core/utils.js';
 import { css } from '../core/ease.js';
+import { wait } from '../core/ticker.js';
 
 injectStyle(
   'sf-handoff',
@@ -132,7 +133,7 @@ export function titleHandoff(navTarget, titleTarget, options = {}) {
     const ghostP = fly(old, from, toBox, 1, ratio, D, getComputedStyle(title).color, getComputedStyle(it.btn).color);
     title.style.visibility = 'hidden';
     setTitle(label);
-    await new Promise((r) => setTimeout(r, D * 0.28));
+    await wait(D * 0.28);
     title.style.visibility = '';
     const rise = title.animate(
       [{ opacity: 0, transform: 'translate3d(0, .35em, 0)', filter: 'blur(8px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }],

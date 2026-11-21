@@ -17,7 +17,7 @@ import { css } from '../core/ease.js';
 
 injectStyle(
   'sf-anagram',
-  `.sf-anagram{position:relative;display:inline-block;vertical-align:bottom;white-space:nowrap;height:1.2em;line-height:1.2em}
+  `:where(.sf-anagram){position:relative}.sf-anagram{display:inline-block;vertical-align:bottom;white-space:nowrap;height:1.2em;line-height:1.2em}
 .sf-anagram-g{position:absolute;left:0;top:0;white-space:pre;will-change:transform,opacity,filter}
 .sf-anagram-probe{position:absolute;visibility:hidden;white-space:pre;left:0;top:0}`
 );

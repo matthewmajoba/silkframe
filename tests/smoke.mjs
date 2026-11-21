@@ -13,7 +13,7 @@ const only = process.argv[2] ? `?only=${process.argv[2]}` : '';
 const plan = {
   width: 1280, height: 900, out,
   steps: [
-    { goto: `http://localhost:4173/tests/smoke.html${only}` },
+    { goto: `http://localhost:4180/tests/smoke.html${only}` },
     { eval: 'new Promise(async (r) => { for (let i = 0; i < 400 && !window.__done; i++) await new Promise((q) => setTimeout(q, 250)); r(window.__done || ["timeout"]); })' },
   ],
 };

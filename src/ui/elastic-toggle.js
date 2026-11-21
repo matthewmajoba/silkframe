@@ -15,7 +15,7 @@ import { resolve, clamp } from '../core/utils.js';
 
 injectStyle(
   'sf-toggle',
-  `.sf-tg{position:relative;width:var(--sf-tg-w,3.4em);height:var(--sf-tg-h,1.9em);border-radius:99px;border:0;padding:0;cursor:pointer;
+  `:where(.sf-tg){position:relative}.sf-tg{width:var(--sf-tg-w,3.4em);height:var(--sf-tg-h,1.9em);border-radius:99px;border:0;padding:0;cursor:pointer;
   background:var(--sf-tg-off,#2a2a31);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);overflow:hidden;isolation:isolate}
 .sf-tg-fill{position:absolute;inset:0;border-radius:inherit;background:var(--sf-tg-on,#ffb547);transform-origin:var(--sf-tg-origin,0% 50%);will-change:transform}
 .sf-tg-knob{position:absolute;top:50%;left:0;width:calc(var(--sf-tg-h,1.9em) - .36em);height:calc(var(--sf-tg-h,1.9em) - .36em);

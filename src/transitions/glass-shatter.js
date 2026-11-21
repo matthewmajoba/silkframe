@@ -94,7 +94,7 @@ export function glassShatter(el, options = {}) {
     layer.style.cssText += `left:${box.x}px;top:${box.y}px;width:${box.w}px;height:${box.h}px;inset:auto;visibility:hidden`;
     parent.appendChild(layer);
     const src = snapshot(el);
-    src.style.visibility = 'visible';
+    src.style.removeProperty('visibility'); // inherit: the layer controls visibility
     const pieces = [];
     for (let n = 0; n < g.shards.length; n++) {
       const piece = makePiece(g.shards[n]);

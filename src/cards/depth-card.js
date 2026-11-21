@@ -5,10 +5,19 @@
  * scene inside appears to have real distance — while the card's own clip
  * and radius stay perfect (no 3D flattening artefacts).
  *
- *   <div class="card">
- *     <img data-depth="0" …> <div data-depth="0.6" …> <h3 data-depth="1" …>
+ * Layers marked data-float sit in front of the glass and may break out of
+ * the card's frame (put them on a wrapper outside the clipped card); give
+ * them a [data-shadow-of] twin inside the card and its shadow falls only on
+ * the card surface, sliding against the tilt as a real cast shadow would.
+ *
+ *   <div class="wrap">                      ← depthCard target (unclipped)
+ *     <div class="card" data-depth-surface>  ← clipped window
+ *       <div data-depth="0">…</div> <div data-depth="0.6">…</div>
+ *       <h3 data-depth="0.95" data-shadow>Title</h3>
+ *     </div>
+ *     <h3 data-depth="1.5" data-float>Title</h3>
  *   </div>
- *   depthCard('.card', { maxTilt: 9, depth: 26 });
+ *   depthCard('.wrap', { maxTilt: 9, depth: 26 });
  */
 import { tick } from '../core/ticker.js';
 import { Spring } from '../core/spring.js';
@@ -38,14 +47,16 @@ export function depthCard(target, options = {}) {
   const layers = Array.from(el.querySelectorAll('[data-depth]')).map((node) => ({
     node,
     d: parseFloat(node.dataset.depth) || 0,
+    float: node.hasAttribute('data-float'), // floating layers are never overscanned
     base: node.style.transform,
   }));
+  const surface = el.querySelector('[data-depth-surface]') || el;
   let shine = null;
   if (o.shine) {
     shine = document.createElement('div');
     shine.className = 'sf-depth-shine';
     shine.setAttribute('aria-hidden', 'true');
-    el.appendChild(shine);
+    surface.appendChild(shine);
   }
   const cfg = { stiffness: 120, damping: 17, precision: 0.0005 };
   const x = new Spring(0, cfg), y = new Spring(0, cfg), h = new Spring(0, { stiffness: 80, damping: 16, precision: 0.001 });
@@ -70,7 +81,7 @@ export function depthCard(target, options = {}) {
     for (const l of layers) {
       // Far layers move with the pointer, near layers against it.
       const k = (l.d - 0.35) * o.depth;
-      const sc = 1 + Math.abs(l.d - 0.35) * o.scale * 2;
+      const sc = l.float ? 1 : 1 + Math.abs(l.d - 0.35) * o.scale * 2;
       l.node.style.transform = `${l.base} translate3d(${(-x.value * k).toFixed(2)}px, ${(-y.value * k).toFixed(2)}px, 0) scale(${sc.toFixed(4)})`;
     }
     if (!o.idle && !inside && x.resting && y.resting && h.resting) { off(); off = null; }

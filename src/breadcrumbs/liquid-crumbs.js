@@ -17,10 +17,10 @@ import { css } from '../core/ease.js';
 
 injectStyle(
   'sf-lcrumbs',
-  `.sf-lc{position:relative;display:inline-flex;align-items:center}
+  `:where(.sf-lc){position:relative}.sf-lc{display:inline-flex;align-items:center}
 .sf-lc ol{position:relative;z-index:1;display:flex;align-items:center;margin:0;padding:0;list-style:none}
 .sf-lc li{display:flex;align-items:center;white-space:nowrap}
-.sf-lc-link{position:relative;display:block;padding:.5em .95em;border-radius:99px;color:var(--sf-lc-fg,rgba(255,255,255,.55));
+:where(.sf-lc-link){position:relative}.sf-lc-link{display:block;padding:.5em .95em;border-radius:99px;color:var(--sf-lc-fg,rgba(255,255,255,.55));
   text-decoration:none;transition:color .35s;cursor:pointer;background:none;border:0;font:inherit}
 .sf-lc-link:hover{color:var(--sf-lc-hover,#fff)}
 .sf-lc-link[aria-current="page"]{color:var(--sf-lc-active-fg,#0b0b0e);cursor:default}

@@ -3,7 +3,7 @@
 //   node tests/capture.mjs plan.json
 //
 // plan.json: { "width": 1280, "height": 800, "out": "dir", "steps": [
-//   { "goto": "http://localhost:4173/view.html?fx=ink-bloom" },
+//   { "goto": "http://localhost:4180/view.html?fx=ink-bloom" },
 //   { "wait": 800 },
 //   { "eval": "__sf.freeze()" },
 //   { "shot": "ink-0.png", "clip": [x, y, w, h] }

@@ -1,4 +1,9 @@
 import { magneticButton } from '../../src/ui/magnetic-button.js';
+import { bauhausGoya } from '../../src/ui/loaders/bauhaus-goya.js';
+import { mondrianHokusai } from '../../src/ui/loaders/mondrian-hokusai.js';
+import { kandinskyMorandi } from '../../src/ui/loaders/kandinsky-morandi.js';
+import { calderMiro } from '../../src/ui/loaders/calder-miro.js';
+import { rileyKlimt } from '../../src/ui/loaders/riley-klimt.js';
 import { gooeyTabs } from '../../src/ui/gooey-tabs.js';
 import { scrollComet } from '../../src/ui/scroll-comet.js';
 import { morphCursor } from '../../src/ui/morph-cursor.js';
@@ -21,23 +26,44 @@ export default [
   {
     id: 'magnetic-button',
     name: 'Magnetic Button',
-    description: 'The button leans toward the pointer inside a capture field, its label travelling further than the shell for depth. The fill floods in from where you entered and drains toward where you left.',
+    description: 'A quiet magnet: within a small field the button leans toward the pointer, softly limited to a fraction of its height, label drifting a touch further. The fill floods in from where you entered and drains where you leave.',
     tags: ['springs', 'direction-aware fill', 'parallax'],
     hint: 'Approach and hover the buttons',
     file: 'src/ui/magnetic-button.js',
     usage: `import { magneticButton } from './src/ui/magnetic-button.js';
 
-magneticButton('.cta', { radius: 110, strength: 0.32 });
+magneticButton('.cta', { radius: 70, pull: 0.22 });
 /* fill colour: --sf-mag-fill / --sf-mag-fill-fg */`,
     mount(stage, scope) {
       const row = html(stage, `<div class="d-btnrow"><button class="d-btn is-solid">Get started</button><button class="d-btn">View the reel</button></div>`);
       const [a, b] = row.querySelectorAll('button');
       const fa = scope.use(magneticButton(a));
       const fb = scope.use(magneticButton(b));
-      ghostPointer(scope, stage, (x, y, r) => {
-        fa.point(r.left + x, r.top + y);
-        fb.point(r.left + x, r.top + y);
-      }, null, { speed: 0.8 });
+      // A visitor's cursor: drifts in, hovers near a button, wanders off.
+      let human = false;
+      scope.on(stage, 'pointerenter', () => (human = true));
+      scope.on(stage, 'pointerleave', () => (human = false));
+      const at = { x: 0, y: 0 };
+      const goal = { x: 0, y: 0 };
+      const targets = () => {
+        const r = stage.getBoundingClientRect();
+        const pick = (el, ox, oy) => { const q = el.getBoundingClientRect(); return { x: q.left + q.width / 2 + ox - r.left, y: q.top + q.height / 2 + oy - r.top }; };
+        return [pick(a, -20, -14), { x: r.width * 0.5, y: r.height * 0.2 }, pick(b, 26, 10), pick(b, -10, -4), { x: r.width * 0.8, y: r.height * 0.75 }, pick(a, 16, 12)];
+      };
+      let i = 0;
+      scope.loop(async () => {
+        const t = targets()[i++ % 6];
+        goal.x = t.x; goal.y = t.y;
+        await scope.wait(1300);
+      });
+      scope.raf(() => {
+        if (human) return;
+        at.x += (goal.x - at.x) * 0.06;
+        at.y += (goal.y - at.y) * 0.06;
+        const r = stage.getBoundingClientRect();
+        fa.point(r.left + at.x, r.top + at.y);
+        fb.point(r.left + at.x, r.top + at.y);
+      });
     },
   },
   {
@@ -322,6 +348,121 @@ tabs.select(2);`,
       scope.loop(async () => {
         await scope.wait(1400);
         if (!touched) fx.select(seq[i++ % seq.length]);
+      });
+    },
+  },
+  {
+    id: 'loader-bauhaus-goya',
+    name: 'Loader · Bauhaus × Goya',
+    description: 'Bauhaus primaries balanced on a seesaw, painted in the dark of Goya\u2019s Black Paintings: one flickering candle, umber shadows, rough grain. The ball rolls under real gravity while an ochre ring fills; at 100% everything settles into balance.',
+    tags: ['seesaw physics', 'chiaroscuro', 'canvas'],
+    file: 'src/ui/loaders/bauhaus-goya.js',
+    usage: `import { bauhausGoya } from './src/ui/loaders/bauhaus-goya.js';
+
+const loader = bauhausGoya(document.querySelector('.splash'));
+loader.progress(0.4);        // feed real progress (0–1)…
+await loader.complete();     // …then play the finale
+// or: await loader.run(3200)  — a simulated, uneven load`,
+    mount(stage, scope) {
+      const host = html(stage, `<div class="d-artload"></div>`);
+      const loader = scope.use(bauhausGoya(host));
+      scope.loop(async () => {
+        await loader.run(3600);
+        await scope.wait(1100);
+        loader.reset();
+        await scope.wait(500);
+      });
+    },
+  },
+  {
+    id: 'loader-mondrian-hokusai',
+    name: 'Loader · Mondrian × Hokusai',
+    description: 'A Mondrian grid on washi paper, each cell flooded by a Hokusai wave \u2014 a curling Prussian-blue crest with claws of foam \u2014 leaving shimmering seigaiha scales. At 100% one great wave rolls across the whole composition.',
+    tags: ['wave fronts', 'seigaiha', 'canvas'],
+    file: 'src/ui/loaders/mondrian-hokusai.js',
+    usage: `import { mondrianHokusai } from './src/ui/loaders/mondrian-hokusai.js';
+
+const loader = mondrianHokusai(document.querySelector('.splash'));
+loader.progress(0.4);        // feed real progress (0–1)…
+await loader.complete();     // …then play the finale
+// or: await loader.run(3200)  — a simulated, uneven load`,
+    mount(stage, scope) {
+      const host = html(stage, `<div class="d-artload"></div>`);
+      const loader = scope.use(mondrianHokusai(host));
+      scope.loop(async () => {
+        await loader.run(3600);
+        await scope.wait(1100);
+        loader.reset();
+        await scope.wait(500);
+      });
+    },
+  },
+  {
+    id: 'loader-kandinsky-morandi',
+    name: 'Loader · Kandinsky × Morandi',
+    description: 'Kandinsky\u2019s circles played as music in Morandi\u2019s dusty palette: translucent discs drift and breathe on their own beat of an 84 bpm bar while notes land on a stave. At 100% they gather into concentric rings and strike a chord.',
+    tags: ['rhythm', 'multiply blend', 'canvas'],
+    file: 'src/ui/loaders/kandinsky-morandi.js',
+    usage: `import { kandinskyMorandi } from './src/ui/loaders/kandinsky-morandi.js';
+
+const loader = kandinskyMorandi(document.querySelector('.splash'));
+loader.progress(0.4);        // feed real progress (0–1)…
+await loader.complete();     // …then play the finale
+// or: await loader.run(3200)  — a simulated, uneven load`,
+    mount(stage, scope) {
+      const host = html(stage, `<div class="d-artload"></div>`);
+      const loader = scope.use(kandinskyMorandi(host));
+      scope.loop(async () => {
+        await loader.run(3600);
+        await scope.wait(1100);
+        loader.reset();
+        await scope.wait(500);
+      });
+    },
+  },
+  {
+    id: 'loader-calder-miro',
+    name: 'Loader · Calder × Miró',
+    description: 'A Calder mobile hung with Mir\u00f3\u2019s shapes. Every arm is a damped pendulum seeking the balance of the weights below; each new shape that arrives with progress sets the whole mobile swinging to rebalance.',
+    tags: ['pendulum physics', 'turning plates', 'canvas'],
+    file: 'src/ui/loaders/calder-miro.js',
+    usage: `import { calderMiro } from './src/ui/loaders/calder-miro.js';
+
+const loader = calderMiro(document.querySelector('.splash'));
+loader.progress(0.4);        // feed real progress (0–1)…
+await loader.complete();     // …then play the finale
+// or: await loader.run(3200)  — a simulated, uneven load`,
+    mount(stage, scope) {
+      const host = html(stage, `<div class="d-artload"></div>`);
+      const loader = scope.use(calderMiro(host));
+      scope.loop(async () => {
+        await loader.run(3600);
+        await scope.wait(1100);
+        loader.reset();
+        await scope.wait(500);
+      });
+    },
+  },
+  {
+    id: 'loader-riley-klimt',
+    name: 'Loader · Riley × Klimt',
+    description: 'Bridget Riley\u2019s op-art current rippling across Klimt\u2019s gold leaf and tesserae. As progress grows the vibration calms into order; at 100% the bands draw straight, part like a curtain and light runs across the gold.',
+    tags: ['op art', 'gold leaf', 'canvas'],
+    file: 'src/ui/loaders/riley-klimt.js',
+    usage: `import { rileyKlimt } from './src/ui/loaders/riley-klimt.js';
+
+const loader = rileyKlimt(document.querySelector('.splash'));
+loader.progress(0.4);        // feed real progress (0–1)…
+await loader.complete();     // …then play the finale
+// or: await loader.run(3200)  — a simulated, uneven load`,
+    mount(stage, scope) {
+      const host = html(stage, `<div class="d-artload"></div>`);
+      const loader = scope.use(rileyKlimt(host));
+      scope.loop(async () => {
+        await loader.run(3600);
+        await scope.wait(1100);
+        loader.reset();
+        await scope.wait(500);
       });
     },
   },

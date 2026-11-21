@@ -15,7 +15,7 @@ import { wait } from '../core/ticker.js';
 
 injectStyle(
   'sf-blade',
-  `.sf-blade{position:relative}
+  `:where(.sf-blade){position:relative}
 .sf-blade-half{display:block}
 .sf-blade-b{position:absolute;inset:0}
 .sf-blade-line{position:absolute;left:50%;top:50%;height:2px;pointer-events:none;opacity:0}

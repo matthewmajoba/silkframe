@@ -16,7 +16,7 @@ import { resolve, clamp } from '../core/utils.js';
 
 injectStyle(
   'sf-flip',
-  `.sf-flip{position:relative;perspective:var(--sf-flip-perspective,1400px);touch-action:pan-y;cursor:grab;user-select:none}
+  `:where(.sf-flip){position:relative}.sf-flip{perspective:var(--sf-flip-perspective,1400px);touch-action:pan-y;cursor:grab;user-select:none}
 .sf-flip.is-dragging{cursor:grabbing}
 .sf-flip-shadow{position:absolute;left:8%;right:8%;bottom:-6%;height:14%;border-radius:50%;pointer-events:none;
   background:radial-gradient(closest-side,rgba(0,0,0,.65),transparent);filter:blur(8px);will-change:transform,opacity}

@@ -15,7 +15,7 @@ import { resolve, clamp } from '../core/utils.js';
 
 injectStyle(
   'sf-orbit',
-  `.sf-orbit{position:relative;perspective:var(--sf-orbit-perspective,1400px);touch-action:pan-y;user-select:none;cursor:grab}
+  `:where(.sf-orbit){position:relative}.sf-orbit{perspective:var(--sf-orbit-perspective,1400px);touch-action:pan-y;user-select:none;cursor:grab}
 .sf-orbit.is-dragging{cursor:grabbing}
 .sf-orbit-stage{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
 .sf-orbit-stage>*{position:absolute;transform-style:preserve-3d;will-change:transform,opacity;

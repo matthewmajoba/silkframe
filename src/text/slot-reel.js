@@ -19,7 +19,7 @@ import { graphemes } from '../core/split.js';
 injectStyle(
   'sf-slot',
   `.sf-slot{display:inline-flex;white-space:pre}
-.sf-slot-reel{position:relative;display:inline-block;height:1.08em;line-height:1.08em;overflow:hidden;vertical-align:bottom;
+:where(.sf-slot-reel){position:relative}.sf-slot-reel{display:inline-block;height:1.08em;line-height:1.08em;overflow:hidden;vertical-align:bottom;
   -webkit-mask:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
 .sf-slot-reel.is-still{-webkit-mask:none;mask:none}
 .sf-slot-strip{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;will-change:transform,filter}

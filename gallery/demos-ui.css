@@ -111,3 +111,6 @@
 /* Gooey tabs */
 .d-tabs { display: grid; place-items: center; }
 .d-tabbar { font-family: var(--font-ui); font-weight: 500; font-size: clamp(12px, 2.1cqi, 19px); }
+
+/* Art loaders fill the stage */
+.d-artload { position: absolute; inset: 0; }

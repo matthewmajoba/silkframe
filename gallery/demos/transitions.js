@@ -336,9 +336,9 @@ el.onclick = (e) => goo.run(() => swap(), { x: e.offsetX, y: e.offsetY });`,
   },
   {
     id: 'light-leak',
-    name: 'Light Leak',
-    description: 'The film-stock transition: a warm leak bleeds in from the gate, the image over-exposes toward white, the cut happens inside the flare and the next scene develops back out of the burn.',
-    tags: ['exposure', 'screen blend', 'cheap'],
+    name: 'Anamorphic Flare',
+    description: 'The J.J. Abrams cut: a point of light slides across the lens, a razor-thin blue streak shoots edge to edge, ghost reflections mirror it through the optical centre, and the cut happens inside the wash.',
+    tags: ['anamorphic', 'lens ghosts', 'additive canvas'],
     file: 'src/transitions/light-leak.js',
     usage: `import { lightLeak } from './src/transitions/light-leak.js';
 
@@ -348,7 +348,7 @@ await leak.run(() => showNext());`,
       const th = theatre(stage);
       const visible = () => th.scenes.find((s) => s.style.visibility !== 'hidden');
       const ltr = scope.use(lightLeak(th.root, { scene: visible }));
-      const rtl = scope.use(lightLeak(th.root, { scene: visible, from: 'right', seed: 4, palette: ['#ff3d6e', '#ff8a3d', '#ffd36e', '#fff1c9'] }));
+      const rtl = scope.use(lightLeak(th.root, { scene: visible, from: 'right', seed: 4 }));
       let n = 0;
       scope.loop(async () => {
         await scope.wait(1300);
@@ -369,7 +369,7 @@ await chromaticShift(container, { spread: 0.06, angle: 0 }).run(current, next);`
     mount(stage, scope) {
       const th = theatre(stage);
       const h = scope.use(chromaticShift(th.root));
-      const d = scope.use(chromaticShift(th.root, { angle: 35, spread: 0.08 }));
+      const d = scope.use(chromaticShift(th.root, { angle: 70, spread: 0.03 }));
       let n = 0;
       scope.loop(async () => {
         await scope.wait(1300);

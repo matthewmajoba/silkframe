@@ -8,7 +8,7 @@
  *   const crumbs = inkCrumbs(nav, { items: ['Atelier', 'Archive'] });
  *   crumbs.push('Sketches');   crumbs.go(0);
  */
-import { tick } from '../core/ticker.js';
+import { tick, wait } from '../core/ticker.js';
 import { injectStyle } from '../core/style.js';
 import { mulberry32 } from '../core/noise.js';
 import { svg, resolve, clamp, prefersReducedMotion } from '../core/utils.js';
@@ -16,7 +16,7 @@ import { inOutCubic, outCubic } from '../core/ease.js';
 
 injectStyle(
   'sf-ink-crumbs',
-  `.sf-ic{position:relative;display:inline-flex;align-items:center}
+  `:where(.sf-ic){position:relative}.sf-ic{display:inline-flex;align-items:center}
 .sf-ic ol{display:flex;align-items:center;margin:0;padding:0;list-style:none}
 .sf-ic li{display:flex;align-items:center;white-space:nowrap}
 .sf-ic-link{background:none;border:0;font:inherit;color:var(--sf-ic-fg,rgba(255,255,255,.6));padding:.45em .3em;cursor:pointer;transition:color .3s}
@@ -177,7 +177,7 @@ export function inkCrumbs(target, options = {}) {
       a.finished.then(() => { it.li.remove(); }, () => it.li.remove());
     });
     strokes.forEach(lift);
-    setTimeout(() => underline(), 380 + removed.length * 60);
+    wait(380 + removed.length * 60).then(() => underline());
     return Promise.resolve(true);
   }
 

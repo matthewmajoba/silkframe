@@ -9,7 +9,7 @@
 ## Quick start
 
 ```bash
-node serve.mjs            # → http://localhost:4173  (or double-click start.bat on Windows)
+node serve.mjs            # → http://localhost:4180  (or double-click start.bat on Windows)
 ```
 
 `examples/landing.html` is a complete studio landing page composed from twelve effects — the fastest way to see how they combine in production markup.

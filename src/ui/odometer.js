@@ -16,7 +16,7 @@ import { cubicBezier } from '../core/ease.js';
 injectStyle(
   'sf-odo',
   `.sf-odo{display:inline-flex;align-items:flex-start;font-variant-numeric:tabular-nums;line-height:1}
-.sf-odo-reel{position:relative;display:inline-block;height:1em;overflow:hidden;width:var(--sf-odo-w,.62em);transition:width .6s cubic-bezier(.16,1,.3,1)}
+:where(.sf-odo-reel){position:relative}.sf-odo-reel{display:inline-block;height:1em;overflow:hidden;width:var(--sf-odo-w,.62em);transition:width .6s cubic-bezier(.16,1,.3,1)}
 .sf-odo-reel.is-entering,.sf-odo-reel.is-leaving{width:0}
 .sf-odo-strip{position:absolute;left:0;right:0;top:0;display:flex;flex-direction:column;align-items:center;will-change:transform,filter}
 .sf-odo-strip>span{display:block;height:1em;line-height:1}

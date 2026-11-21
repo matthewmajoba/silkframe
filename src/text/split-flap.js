@@ -15,7 +15,7 @@ import { wait } from '../core/ticker.js';
 injectStyle(
   'sf-flap',
   `.sf-board{display:inline-flex;gap:var(--sf-flap-gap,.07em);font-variant-numeric:tabular-nums}
-.sf-cell{position:relative;width:var(--sf-flap-w,.78em);height:var(--sf-flap-h,1.16em);perspective:3.2em;
+:where(.sf-cell){position:relative}.sf-cell{width:var(--sf-flap-w,.78em);height:var(--sf-flap-h,1.16em);perspective:3.2em;
   line-height:var(--sf-flap-h,1.16em);text-align:center;border-radius:var(--sf-flap-r,.09em);
   box-shadow:0 .06em .12em rgba(0,0,0,.55),0 .02em 0 rgba(255,255,255,.04) inset}
 .sf-half{position:absolute;left:0;right:0;height:50%;overflow:hidden;background:var(--sf-flap-bg,#17171c);

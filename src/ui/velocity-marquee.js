@@ -14,7 +14,7 @@ import { resolve, clamp, debounce, prefersReducedMotion } from '../core/utils.js
 
 injectStyle(
   'sf-marquee',
-  `.sf-mq{position:relative;overflow:hidden;white-space:nowrap;user-select:none;touch-action:pan-y;cursor:grab}
+  `:where(.sf-mq){position:relative}.sf-mq{overflow:hidden;white-space:nowrap;user-select:none;touch-action:pan-y;cursor:grab}
 .sf-mq.is-dragging{cursor:grabbing}
 .sf-mq-track{display:inline-flex;will-change:transform}
 .sf-mq-unit{display:inline-flex;flex:none}`

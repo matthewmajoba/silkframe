@@ -24,7 +24,7 @@ const probe = `new Promise((res) => {
 })`;
 const steps = [];
 for (const id of ids) {
-  steps.push({ goto: `http://localhost:4173/view.html?fx=${id}` }, { wait: 900 }, { eval: probe });
+  steps.push({ goto: `http://localhost:4180/view.html?fx=${id}` }, { wait: 900 }, { eval: probe });
 }
 const planPath = join(out, 'perf-plan.json');
 writeFileSync(planPath, JSON.stringify({ width: 1280, height: 800, out, steps }));

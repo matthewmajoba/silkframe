@@ -1,11 +1,13 @@
 /**
  * Magnetic Button
- * The button leans toward the pointer inside a capture radius, its label
- * travelling further than the shell for a sense of depth. The hover fill is
- * direction-aware: it floods in from where you entered and drains out
- * toward where you left.
+ * A quiet magnet. Within a small field the button leans toward the pointer —
+ * never more than a fraction of its own height, softly limited so it can't
+ * be dragged around — with the label drifting a touch further for depth.
+ * Springs are critically damped (no wobble). On hover the fill floods in
+ * from where you entered and drains toward where you leave; pressing gives
+ * a small, physical squeeze.
  *
- *   magneticButton('.cta', { strength: 0.35, radius: 120 });
+ *   magneticButton('.cta', { pull: 0.22, radius: 70 });
  */
 import { tick } from '../core/ticker.js';
 import { Spring } from '../core/spring.js';
@@ -15,17 +17,18 @@ import { css } from '../core/ease.js';
 
 injectStyle(
   'sf-magnetic',
-  `.sf-mag{position:relative;overflow:hidden;isolation:isolate;will-change:transform}
-.sf-mag-label{position:relative;z-index:2;display:inline-block;will-change:transform;transition:color .45s cubic-bezier(.16,1,.3,1)}
+  `:where(.sf-mag){position:relative}
+.sf-mag{overflow:hidden;isolation:isolate;will-change:transform}
+.sf-mag-label{position:relative;z-index:2;display:inline-block;will-change:transform;transition:color .5s cubic-bezier(.16,1,.3,1)}
 .sf-mag-fill{position:absolute;z-index:1;left:0;top:0;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;
   background:var(--sf-mag-fill,#ffb547);transform:scale(0);pointer-events:none}
 .sf-mag.is-filled .sf-mag-label{color:var(--sf-mag-fill-fg,#0b0b0e)}`
 );
 
 const DEFAULTS = {
-  radius: 110, // px beyond the button edge that attracts
-  strength: 0.32, // fraction of the offset the shell travels
-  labelStrength: 0.55, // label travels further (parallax)
+  radius: 70, // px beyond the button edge where the field begins
+  pull: 0.22, // max travel as a fraction of the button's height
+  label: 0.45, // extra drift of the label relative to the shell
   fill: true,
 };
 
@@ -44,39 +47,48 @@ export function magneticButton(target, options = {}) {
     fill.setAttribute('aria-hidden', 'true');
     el.insertBefore(fill, label);
   }
-  const cfg = { stiffness: 160, damping: 14, precision: 0.02 };
+  // Critically damped: it arrives, it doesn't wobble.
+  const cfg = { stiffness: 170, damping: 26, precision: 0.02 };
   const x = new Spring(0, cfg), y = new Spring(0, cfg);
-  const lx = new Spring(0, { stiffness: 140, damping: 12, precision: 0.02 }), ly = new Spring(0, { stiffness: 140, damping: 12, precision: 0.02 });
+  const lx = new Spring(0, cfg), ly = new Spring(0, cfg);
+  const sc = new Spring(1, { stiffness: 420, damping: 30, precision: 0.0005 });
   let off = null;
   let rect = null;
   let fillAnim = null;
+  let hovering = false;
 
   function frame(_, dt) {
     const s = dt / 1000;
-    x.step(s); y.step(s); lx.step(s); ly.step(s);
-    el.style.transform = `translate3d(${x.value.toFixed(2)}px, ${y.value.toFixed(2)}px, 0)`;
+    x.step(s); y.step(s); lx.step(s); ly.step(s); sc.step(s);
+    el.style.transform = `translate3d(${x.value.toFixed(2)}px, ${y.value.toFixed(2)}px, 0) scale(${sc.value.toFixed(4)})`;
     label.style.transform = `translate3d(${lx.value.toFixed(2)}px, ${ly.value.toFixed(2)}px, 0)`;
-    if (x.resting && y.resting && lx.resting && ly.resting) { off(); off = null; }
+    if (x.resting && y.resting && lx.resting && ly.resting && sc.resting) { off(); off = null; }
   }
   const wake = () => { if (!off) off = tick(frame); };
 
+  const measure = () => {
+    const prev = el.style.transform;
+    el.style.transform = 'none';
+    rect = el.getBoundingClientRect();
+    el.style.transform = prev;
+  };
+
   const onMove = (e) => {
-    if (!rect) {
-      const prev = el.style.transform;
-      el.style.transform = 'none';
-      rect = el.getBoundingClientRect();
-      el.style.transform = prev;
-    }
+    if (!rect) measure();
     const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
     const dx = e.clientX - cx, dy = e.clientY - cy;
-    const reachX = rect.width / 2 + o.radius, reachY = rect.height / 2 + o.radius;
-    const inside = Math.abs(dx) < reachX && Math.abs(dy) < reachY;
-    if (inside) {
-      // Pull eases off toward the edge of the field for a soft capture.
-      const fx = 1 - Math.pow(Math.abs(dx) / reachX, 3), fy = 1 - Math.pow(Math.abs(dy) / reachY, 3);
-      const f = Math.min(fx, fy);
-      x.to(dx * o.strength * f); y.to(dy * o.strength * f);
-      lx.to(dx * o.labelStrength * o.strength * f); ly.to(dy * o.labelStrength * o.strength * f);
+    // distance from the button's edge (0 inside)
+    const ex = Math.max(0, Math.abs(dx) - rect.width / 2), ey = Math.max(0, Math.abs(dy) - rect.height / 2);
+    const edge = Math.hypot(ex, ey);
+    if (edge < o.radius) {
+      const f = 1 - edge / o.radius; // 1 on/inside the button, 0 at the field's rim
+      const ease = f * f * (3 - 2 * f);
+      const max = rect.height * o.pull;
+      // soft limit: grows with distance from centre but saturates
+      const tx = Math.tanh(dx / (rect.width * 0.75)) * max * ease;
+      const ty = Math.tanh(dy / (rect.height * 0.9)) * max * ease;
+      x.to(tx); y.to(ty);
+      lx.to(tx * o.label); ly.to(ty * o.label);
     } else {
       x.to(0); y.to(0); lx.to(0); ly.to(0);
     }
@@ -95,17 +107,21 @@ export function magneticButton(target, options = {}) {
     el.classList.toggle('is-filled', enter);
     fillAnim = fill.animate(
       enter ? [{ transform: 'scale(0)' }, { transform: `scale(${scale})` }] : [{ transform: `scale(${scale})` }, { transform: 'scale(0)' }],
-      { duration: enter ? 650 : 520, easing: enter ? css.cinematic : css.inOutQuart, fill: 'forwards' }
+      { duration: enter ? 700 : 560, easing: enter ? css.cinematic : css.inOutQuart, fill: 'forwards' }
     );
   };
-  const onEnter = (e) => flood(e, true);
-  const onLeave = (e) => flood(e, false);
+  const onEnter = (e) => { hovering = true; flood(e, true); };
+  const onLeave = (e) => { hovering = false; sc.to(1); wake(); flood(e, false); };
+  const onDown = () => { sc.to(0.965); wake(); };
+  const onUp = () => { sc.to(hovering ? 1 : 1); wake(); };
   const reset = () => (rect = null);
   window.addEventListener('pointermove', onMove, { passive: true });
   window.addEventListener('scroll', reset, { passive: true });
   window.addEventListener('resize', reset);
   el.addEventListener('pointerenter', onEnter);
   el.addEventListener('pointerleave', onLeave);
+  el.addEventListener('pointerdown', onDown);
+  el.addEventListener('pointerup', onUp);
 
   return {
     el,
@@ -118,6 +134,8 @@ export function magneticButton(target, options = {}) {
       window.removeEventListener('resize', reset);
       el.removeEventListener('pointerenter', onEnter);
       el.removeEventListener('pointerleave', onLeave);
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointerup', onUp);
       fill?.remove();
       while (label.firstChild) el.appendChild(label.firstChild);
       label.remove();

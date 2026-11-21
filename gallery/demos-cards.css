@@ -453,3 +453,119 @@
 .d-panels [data-panel-copy] { position: absolute; left: 2cqi; right: 2cqi; bottom: 2cqi; opacity: 0; white-space: nowrap; }
 .d-panels h4 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(22px, 5cqi, 60px); line-height: 0.95; }
 .d-panels p { margin: 0.6cqi 0 0; font-family: var(--font-mono); font-size: clamp(9px, 1.25cqi, 13px); letter-spacing: 0.12em; opacity: 0.75; }
+
+/* Diorama with a floating, frame-breaking title */
+.d-dio-wrap { position: relative; width: 46cqi; aspect-ratio: 4 / 3; margin: 0 0 4cqi 4cqi; }
+.d-dio-wrap .d-diorama { position: absolute; inset: 0; width: auto; }
+.d-diorama > .dio-kicker {
+  inset: 7% auto auto 7%;
+  font-family: var(--font-mono);
+  font-size: 1.25cqi;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 240, 225, 0.7);
+}
+.dio-title {
+  position: absolute;
+  left: -7cqi;
+  bottom: -5.2cqi;
+  margin: 0;
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 7.4cqi;
+  line-height: 0.86;
+  letter-spacing: -0.035em;
+  color: #fff6ea;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.dio-title em { color: var(--accent); }
+.d-diorama > .dio-shadow {
+  inset: auto auto calc(-5.2cqi + 0.6cqi) calc(-7cqi + 1.1cqi);
+  color: rgba(10, 4, 14, 0.62);
+  filter: blur(0.55cqi);
+}
+.d-dio-wrap > .dio-title { z-index: 3; text-shadow: 0 0.15cqi 0.6cqi rgba(0, 0, 0, 0.35); }
+
+/* Quiz board (Dust Dissolve) */
+.d-quiz { position: relative; width: 50cqi; aspect-ratio: 16 / 10; }
+.q-card {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: center;
+  padding: 2.6cqi 3.2cqi 3.2cqi;
+  border: 0;
+  border-radius: 1.6cqi;
+  cursor: pointer;
+  text-align: center;
+  color: #f3c54a;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(120, 150, 255, 0.28), transparent 60%),
+    linear-gradient(180deg, #0b1aa8, #060e6e 70%, #040a4e);
+  box-shadow: inset 0 0 0 0.35cqi rgba(0, 0, 0, 0.35), inset 0 0 4cqi rgba(0, 0, 30, 0.6), 0 2cqi 5cqi -1.5cqi rgba(0, 0, 0, 0.8);
+  font: inherit;
+}
+.q-card:focus-visible { outline: 2px solid #f3c54a; outline-offset: 4px; }
+.q-cat {
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: 1.25cqi;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+.q-text {
+  font-family: var(--font-display);
+  font-size: 3.5cqi;
+  line-height: 1.12;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0.25cqi 0.25cqi 0 rgba(0, 0, 0, 0.85);
+  text-wrap: balance;
+}
+.q-card.is-answer { grid-template-rows: auto auto 1fr; color: #fff; }
+.q-label {
+  margin-top: 4cqi;
+  font-family: var(--font-mono);
+  font-size: 1.2cqi;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #f3c54a;
+}
+.q-card.is-answer .q-text { align-self: start; margin-top: 1.4cqi; font-size: 4.4cqi; text-transform: none; font-style: italic; }
+
+/* In the Dark (Playdead-style spotlight grid) */
+.d-dark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.4cqi;
+  padding: 6cqi 7cqi;
+  background:
+    radial-gradient(80% 70% at 50% 40%, #23272b, #121416 70%),
+    #0c0d0e;
+}
+.d-dark article {
+  border-radius: 0.6cqi;
+  padding: 2.2cqi;
+  text-align: left;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: linear-gradient(170deg, #2e3236, #212427);
+  color: #d9d6cf;
+  filter: grayscale(1);
+}
+.dk-n { font-family: var(--font-mono); font-size: clamp(8px, 1.2cqi, 12px); letter-spacing: 0.24em; text-transform: uppercase; color: #6b6e72; }
+.d-dark p {
+  margin: 1.4cqi 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(16px, 3.3cqi, 40px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.dk-mark { justify-self: end; width: 2.2cqi; height: 2.2cqi; border: 1px solid #bcb8ae; border-radius: 50%; position: relative; }
+.dk-mark::after { content: ''; position: absolute; inset: 30%; border-radius: 50%; background: #bcb8ae; }

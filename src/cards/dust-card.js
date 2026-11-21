@@ -1,13 +1,14 @@
 /**
  * Dust Dissolve
- * The card disintegrates into drifting flakes. A jittered lattice (shared
- * vertices, so there are no gaps) cuts the live element into fragments; a
- * dissolve front sweeps across with noisy edges while each flake is caught
- * by a turbulent wind, curling, shrinking and tumbling away like ash.
- * restore() plays the wind backwards and the card re-forms.
+ * The card disintegrates into drifting flakes. A jittered lattice cuts the
+ * element into fragments; a noisy front sweeps across while each flake is
+ * caught by turbulent wind, curling, shrinking and tumbling away like ash.
+ * restore() plays the wind backwards so the card condenses out of the dust.
  *
- * Fragments are built in small idle-time chunks (prepare()), so even large
- * lattices never block a frame.
+ * The intact part of the card is always the REAL element, clipped to the
+ * union of the flakes that haven't left yet (one clip-path path, filled as
+ * a single shape) — so there are never seams, hairlines or resampling
+ * artefacts while the card is whole. Flakes only exist once they move.
  *
  *   const fx = dustCard(card, { wind: -20 });
  *   fx.prepare();             // optional: pre-build while idle
@@ -23,23 +24,23 @@ import { cinematic } from '../core/ease.js';
 injectStyle(
   'sf-dust',
   `.sf-dust-layer{position:absolute;pointer-events:none;z-index:30}
-.sf-flake{position:absolute;overflow:hidden;will-change:transform,opacity;backface-visibility:visible}
+.sf-flake{position:absolute;overflow:hidden;will-change:transform,opacity;visibility:hidden}
 .sf-flake>.sf-flake-copy{position:absolute;margin:0}`
 );
 
 const DEFAULTS = {
-  cols: 14,
+  cols: 15,
   rows: 10,
   duration: 2300,
   wind: -25, // degrees (0 = blow right, negative = up-right)
   strength: 1,
   sweep: 0.55, // fraction of duration the dissolve front takes to cross
-  chunk: 24, // flakes built per idle slice
+  chunk: Infinity, // flakes built per idle slice (Infinity = one synchronous pass, a few ms)
   seed: 8,
 };
 
 const idle = () =>
-  new Promise((r) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(() => r(), { timeout: 100 }) : setTimeout(r, 16)));
+  new Promise((r) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(() => r(), { timeout: 80 }) : setTimeout(r, 16)));
 
 export function dustCard(el, options = {}) {
   const o = { ...DEFAULTS, ...options };
@@ -47,7 +48,7 @@ export function dustCard(el, options = {}) {
   ensurePositioned(parent);
   const { noise3 } = createNoise(o.seed);
   let off = null;
-  let prepared = null; // Promise<{ layer, flakes, wx, wy, box }>
+  let prepared = null; // Promise<job>
   let current = null;
 
   function prepare() {
@@ -68,31 +69,25 @@ export function dustCard(el, options = {}) {
       }
       const layer = document.createElement('div');
       layer.className = 'sf-dust-layer';
-      layer.style.cssText += `left:${box.x}px;top:${box.y}px;width:${box.w}px;height:${box.h}px;visibility:hidden`;
+      layer.style.cssText += `left:${box.x}px;top:${box.y}px;width:${box.w}px;height:${box.h}px`;
       parent.appendChild(layer);
       const a = (o.wind * Math.PI) / 180;
       const wx = Math.cos(a), wy = Math.sin(a);
       const src = snapshot(el);
-      src.style.visibility = 'visible';
+      src.style.removeProperty('visibility'); // inherit: flakes toggle their own visibility
+      src.style.clipPath = 'none';
       const flakes = [];
       let made = 0;
       for (let j = 0; j < R; j++) {
         for (let i = 0; i < C; i++) {
           const poly = [V[j][i], V[j][i + 1], V[j + 1][i + 1], V[j + 1][i]];
           const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]);
-          const minX = Math.min(...xs) - 0.5, minY = Math.min(...ys) - 0.5;
-          const w = Math.max(...xs) - minX + 0.5, h = Math.max(...ys) - minY + 0.5;
-          // Grow each polygon ~0.6px about its centroid so shared edges never
-          // show anti-aliased seams while the card is still intact.
-          const gx = xs.reduce((s, v) => s + v) / 4, gy = ys.reduce((s, v) => s + v) / 4;
-          const grown = poly.map(([px, py]) => {
-            const d = Math.hypot(px - gx, py - gy) || 1;
-            return [px + ((px - gx) / d) * 0.6, py + ((py - gy) / d) * 0.6];
-          });
+          const minX = Math.floor(Math.min(...xs)), minY = Math.floor(Math.min(...ys));
+          const w = Math.ceil(Math.max(...xs)) - minX, h = Math.ceil(Math.max(...ys)) - minY;
           const node = document.createElement('div');
           node.className = 'sf-flake';
-          node.style.cssText = `left:${minX}px;top:${minY}px;width:${w}px;height:${h}px;` +
-            `clip-path:polygon(${grown.map((p) => `${(p[0] - minX).toFixed(1)}px ${(p[1] - minY).toFixed(1)}px`).join(',')})`;
+          node.style.cssText += `left:${minX}px;top:${minY}px;width:${w}px;height:${h}px;` +
+            `clip-path:polygon(${poly.map((p) => `${(p[0] - minX).toFixed(2)}px ${(p[1] - minY).toFixed(2)}px`).join(',')})`;
           const copy = src.cloneNode(true);
           copy.classList.add('sf-flake-copy');
           copy.style.left = `${-minX}px`;
@@ -105,6 +100,7 @@ export function dustCard(el, options = {}) {
           const along = (((i + 0.5) / C) * wx + ((j + 0.5) / R) * wy + 1) / 2;
           flakes.push({
             node,
+            path: `M${poly.map((p) => `${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(' L')} Z`,
             at: clamp(along * 0.85 + rand() * 0.25),
             seed: rand() * 100,
             spin: (rand() - 0.5) * 520,
@@ -112,6 +108,7 @@ export function dustCard(el, options = {}) {
             tumble: 240 + rand() * 520,
             lift: 0.6 + rand() * 0.8,
             px: (i + 0.5) * cw, py: (j + 0.5) * ch,
+            shown: false,
           });
           if (++made % o.chunk === 0) await idle();
         }
@@ -135,9 +132,16 @@ export function dustCard(el, options = {}) {
     const D = o.duration;
     const travel = Math.max(box.w, box.h) * 0.9 * o.strength;
     const life = 1 - o.sweep;
+    el.style.visibility = '';
+    let lastKey = '';
+
     const pose = (f, k) => {
-      // k: 0 = intact, 1 = fully blown away
-      if (k <= 0) { f.node.style.transform = ''; f.node.style.opacity = ''; return; }
+      // k: 0 = intact (drawn by the real element), 1 = fully blown away
+      if (k <= 0) {
+        if (f.shown) { f.node.style.visibility = 'hidden'; f.shown = false; }
+        return;
+      }
+      if (!f.shown) { f.node.style.visibility = 'visible'; f.shown = true; }
       const e = k * k;
       const n1 = noise3(f.px * 0.01, f.py * 0.01, f.seed + k * 1.6);
       const n2 = noise3(f.py * 0.01, f.seed, f.px * 0.01 + k * 1.6);
@@ -148,27 +152,36 @@ export function dustCard(el, options = {}) {
       f.node.style.transform = `perspective(600px) translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0) rotate3d(${f.axis},${(f.tumble * k).toFixed(1)}deg) rotate(${(f.spin * e).toFixed(1)}deg) scale(${sc.toFixed(3)})`;
       f.node.style.opacity = (1 - smoothstep(0.2, 0.85, k)).toFixed(3);
     };
-    let t = 0;
-    const step = () => {
-      const p = clamp(t / D);
-      for (const f of flakes) {
+
+    const ks = new Float32Array(flakes.length);
+    const step = (p) => {
+      let key = '';
+      flakes.forEach((f, i) => {
         const k = forward
           ? clamp((p - f.at * o.sweep) / life)
           : clamp(1 - cinematic(clamp((p - (1 - f.at) * o.sweep) / life)));
+        ks[i] = k;
         pose(f, k);
+        key += k <= 0 ? '1' : '0';
+      });
+      // The real card shows exactly the flakes still at rest.
+      if (key !== lastKey) {
+        lastKey = key;
+        const d = flakes.filter((_, i) => ks[i] <= 0).map((f) => f.path).join(' ');
+        el.style.clipPath = d ? `path('${d}')` : 'inset(50% 50% 50% 50%)';
       }
-      return p;
     };
-    step();
-    // Swap the live card for its fragments in the same frame.
-    layer.style.visibility = 'visible';
-    el.style.visibility = 'hidden';
+    step(0);
     return new Promise((done) => {
+      let t = 0;
       off = tick((_, dt) => {
         t += dt;
-        if (step() >= 1) {
+        const p = clamp(t / D);
+        step(p);
+        if (p >= 1) {
           off(); off = null;
-          if (!forward) el.style.visibility = '';
+          el.style.clipPath = '';
+          el.style.visibility = forward ? 'hidden' : '';
           layer.remove();
           current = null;
           done(true);
@@ -183,6 +196,7 @@ export function dustCard(el, options = {}) {
     restore: () => animate(false),
     destroy() {
       if (off) { off(); off = null; el.style.visibility = ''; }
+      el.style.clipPath = '';
       current?.layer.remove();
       prepared?.then((j) => j.layer.remove());
     },

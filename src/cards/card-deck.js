@@ -15,7 +15,7 @@ import { resolve, clamp } from '../core/utils.js';
 
 injectStyle(
   'sf-deck',
-  `.sf-deck{position:relative;touch-action:none;user-select:none}
+  `:where(.sf-deck){position:relative}.sf-deck{touch-action:none;user-select:none}
 .sf-deck>*{position:absolute;inset:0;will-change:transform;transform-origin:50% 50%}
 .sf-deck>.is-top{cursor:grab}
 .sf-deck>.is-top.is-grabbed{cursor:grabbing}`
@@ -27,6 +27,8 @@ const DEFAULTS = {
   scaleStep: 0.055,
   threshold: 0.38, // fraction of width that commits a throw without velocity
   velocity: 650, // px/s that commits a throw
+  gravity: 2900, // px/s² — real weight, not moon gravity
+  drag: 0.9, // air drag on the throw (1/s)
 };
 
 export function cardDeck(target, options = {}) {
@@ -71,10 +73,13 @@ export function cardDeck(target, options = {}) {
     let busy = !!drag || airborne.length > 0;
     for (let i = airborne.length - 1; i >= 0; i--) {
       const c = airborne[i];
+      // Ballistic flight: gravity, air drag, and spin that bleeds off.
+      c.vy += o.gravity * s;
+      c.vx *= Math.exp(-o.drag * s);
+      c.vr *= Math.exp(-o.drag * 0.6 * s);
       c.x.value += c.vx * s;
       c.y.value += c.vy * s;
       c.r.value += c.vr * s;
-      c.vy += 900 * s; // a touch of gravity on the arc
       render(c);
       if (Math.abs(c.x.value) > el.offsetWidth * 1.5 || c.y.value > el.offsetHeight * 1.6) {
         airborne.splice(i, 1);
@@ -106,11 +111,13 @@ export function cardDeck(target, options = {}) {
   function launch(c, vx, vy) {
     pile = pile.filter((x) => x !== c);
     airborne.push(c);
-    const speed = Math.max(Math.hypot(vx, vy), 1500);
+    // Keep the hand's real direction; only enforce a minimum release speed.
+    const speed = Math.max(Math.hypot(vx, vy), 1300);
     const len = Math.hypot(vx, vy) || 1;
     c.vx = (vx / len) * speed;
-    c.vy = (vy / len) * speed * 0.6;
-    c.vr = Math.sign(c.vx) * 150;
+    c.vy = (vy / len) * speed;
+    // Spin comes from the throw and from where the card was held.
+    c.vr = c.vx * 0.11 * (c.pivot || 1) + c.r.velocity * 0.2;
     c.node.style.zIndex = String(pile.length + 10);
     c.node.classList.remove('is-top');
     settle();
@@ -140,7 +147,9 @@ export function cardDeck(target, options = {}) {
     drag.lx = e.clientX; drag.ly = e.clientY; drag.t = now;
     c.x.value = e.clientX - drag.x0;
     c.y.value = e.clientY - drag.y0;
-    c.r.value = (c.x.value / el.offsetWidth) * 18 * drag.pivot;
+    // Position tilt about the grab point plus a lean into the motion.
+    c.pivot = drag.pivot;
+    c.r.value = (c.x.value / el.offsetWidth) * 16 * drag.pivot + Math.max(-9, Math.min(9, drag.vx * 0.006));
     c.s.value = 1.03;
     render(c);
   };
@@ -177,7 +186,8 @@ export function cardDeck(target, options = {}) {
       c.r.to(-sgn * 4);
       c.x.to(-sgn * 18);
       wake();
-      wait(160).then(() => pile[0] === c && !drag && launch(c, sgn * 1800, -420));
+      c.pivot = 1;
+      wait(160).then(() => pile[0] === c && !drag && launch(c, sgn * 1350, -980));
     },
     destroy() {
       if (off) off();

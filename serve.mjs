@@ -1,12 +1,12 @@
 // Zero-dependency static server for the Silkframe gallery.
-// Usage: node serve.mjs [port]   →   http://localhost:4173
+// Usage: node serve.mjs [port]   →   http://localhost:4180
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
-const port = Number(process.argv[2] || process.env.PORT || 4173);
+const port = Number(process.argv[2] || process.env.PORT || 4180);
 const types = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',

@@ -1,70 +1,149 @@
 /**
- * Light Leak
- * The film-stock transition: a warm leak of light bleeds in from the edge
- * of the gate, the image over-exposes toward white as the leak blooms, the
- * cut happens inside the flare, and the new scene develops back out of the
- * burn while the leak drifts off the far side. Pure transforms, opacity and
- * a brief exposure filter — very cheap.
+ * Anamorphic Flare
+ * The J.J. Abrams cut. A hard point of light slides across the frame and
+ * the anamorphic lens answers: a razor-thin blue streak shoots edge to
+ * edge, a chain of ghost reflections (circles and hexagons, tinted cyan,
+ * violet and amber) mirrors the source through the optical centre, and as
+ * the source crosses the middle the whole frame washes out. The cut happens
+ * inside the wash; the new scene emerges as the flare slides off the far
+ * side. One canvas, additive blending, drawn at reduced resolution — cheap.
  *
- *   const leak = lightLeak(container, { scene: () => current });
- *   await leak.run(() => showNext());
+ *   const flare = lightLeak(container, { scene: () => current });
+ *   await flare.run(() => showNext());
  */
 import { tick } from '../core/ticker.js';
-import { injectStyle } from '../core/style.js';
 import { mulberry32 } from '../core/noise.js';
 import { clamp, smoothstep, lerp, prefersReducedMotion } from '../core/utils.js';
 import { ensurePositioned } from '../core/snapshot.js';
-
-injectStyle(
-  'sf-leak',
-  `.sf-leak{position:absolute;inset:0;pointer-events:none;z-index:50;overflow:hidden;visibility:hidden}
-.sf-leak-blob{position:absolute;border-radius:50%;mix-blend-mode:screen;will-change:transform,opacity;filter:blur(var(--sf-leak-blur,40px))}
-.sf-leak-flash{position:absolute;inset:0;mix-blend-mode:screen;opacity:0;will-change:opacity}`
-);
+import { cubicBezier } from '../core/ease.js';
 
 const DEFAULTS = {
-  duration: 2000,
-  palette: ['#ff6a2a', '#ffb547', '#ff3d6e', '#fff1c9'],
-  from: 'left', // 'left' | 'right'
+  duration: 2100,
+  from: 'left', // 'left' | 'right' — direction the source travels
+  streak: [120, 185, 255], // anamorphic streak colour
+  core: [255, 252, 245],
   scene: null, // getter for the element to over-expose
   seed: 12,
 };
 
+// Travel: ease in, linger across the centre, ease out.
+const travel = cubicBezier(0.3, 0.1, 0.7, 0.9);
+
 export function lightLeak(container, options = {}) {
   const o = { ...DEFAULTS, ...options };
   ensurePositioned(container);
-  const root = document.createElement('div');
-  root.className = 'sf-leak';
-  root.setAttribute('aria-hidden', 'true');
-  const flash = document.createElement('div');
-  flash.className = 'sf-leak-flash';
-  flash.style.background = 'radial-gradient(120% 140% at var(--fx,30%) 50%, #fff8ea 0%, #ffd7a1 35%, rgba(255,140,70,.55) 70%, rgba(255,90,60,.2) 100%)';
-  const rand = mulberry32(o.seed);
-  const blobs = Array.from({ length: 5 }, (_, i) => {
-    const b = document.createElement('div');
-    b.className = 'sf-leak-blob';
-    const c = o.palette[i % o.palette.length];
-    b.style.background = `radial-gradient(circle, ${c} 0%, ${c}cc 30%, transparent 70%)`;
-    root.appendChild(b);
-    return { el: b, y: 0.15 + rand() * 0.7, size: 0.55 + rand() * 0.6, speed: 0.75 + rand() * 0.5, lag: rand() * 0.15 };
-  });
-  root.appendChild(flash);
-  container.appendChild(root);
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:50;visibility:hidden;mix-blend-mode:screen';
+  container.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
   let off = null;
+
+  // Ghost reflections: position along the source→centre axis (−1.6…1.2),
+  // size (fraction of short side), shape, tint, strength.
+  const rand = mulberry32(o.seed);
+  const tints = [[110, 200, 255], [150, 120, 255], [255, 190, 110], [120, 255, 210], [255, 120, 170]];
+  const ghosts = Array.from({ length: 9 }, (_, i) => ({
+    at: -1.5 + i * 0.32 + (rand() - 0.5) * 0.12,
+    size: 0.03 + rand() * 0.11,
+    hex: rand() < 0.45,
+    tint: tints[i % tints.length],
+    k: 0.08 + rand() * 0.14,
+    ring: rand() < 0.35,
+  }));
+
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(4)})`;
+
+  function poly(x, y, r, sides, rot) {
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+      const a = rot + (i / sides) * Math.PI * 2;
+      const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    }
+    ctx.closePath();
+  }
+
+  function draw(W, H, sx, sy, power, wash) {
+    const cx = W / 2, cy = H / 2;
+    const S = Math.min(W, H);
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    // Veiling glare: the whole frame lifts toward the source.
+    const veil = ctx.createRadialGradient(sx, sy, 0, sx, sy, Math.max(W, H) * 0.9);
+    veil.addColorStop(0, rgba([255, 235, 215], 0.16 * power + 0.85 * wash));
+    veil.addColorStop(0.4, rgba([150, 170, 255], 0.05 * power + 0.6 * wash));
+    veil.addColorStop(1, rgba([40, 60, 120], 0.45 * wash));
+    ctx.fillStyle = veil;
+    ctx.fillRect(0, 0, W, H);
+    // Anamorphic streak: a long horizontal line with a softer halo band.
+    const streakLen = W * (1.4 + power * 0.6);
+    for (const [h, a] of [[S * 0.09, 0.08], [S * 0.022, 0.22], [Math.max(1.5, S * 0.004), 0.85]]) {
+      const g = ctx.createLinearGradient(sx - streakLen / 2, 0, sx + streakLen / 2, 0);
+      g.addColorStop(0, rgba(o.streak, 0));
+      g.addColorStop(0.42, rgba(o.streak, a * power * 0.7));
+      g.addColorStop(0.5, rgba([235, 245, 255], a * power));
+      g.addColorStop(0.58, rgba(o.streak, a * power * 0.7));
+      g.addColorStop(1, rgba(o.streak, 0));
+      ctx.fillStyle = g;
+      ctx.save();
+      ctx.translate(0, sy);
+      ctx.scale(1, h / (S * 0.1));
+      ctx.beginPath();
+      ctx.ellipse(sx, 0, streakLen / 2, S * 0.05, 0, 0, Math.PI * 2);
+      ctx.restore();
+      ctx.fill();
+    }
+    // Hot core with a short starburst.
+    const core = ctx.createRadialGradient(sx, sy, 0, sx, sy, S * 0.16);
+    core.addColorStop(0, rgba(o.core, 1 * power));
+    core.addColorStop(0.08, rgba(o.core, 0.85 * power));
+    core.addColorStop(0.25, rgba([200, 220, 255], 0.28 * power));
+    core.addColorStop(1, rgba([120, 150, 255], 0));
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(sx, sy, S * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = rgba(o.core, 0.35 * power);
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI + 0.3;
+      const r = S * (0.06 + 0.03 * (i % 2));
+      ctx.beginPath();
+      ctx.moveTo(sx - Math.cos(a) * r, sy - Math.sin(a) * r);
+      ctx.lineTo(sx + Math.cos(a) * r, sy + Math.sin(a) * r);
+      ctx.stroke();
+    }
+    // Ghosts along the line through the optical centre.
+    const vx = cx - sx, vy = cy - sy;
+    for (const gh of ghosts) {
+      const gx = cx + vx * gh.at, gy = cy + vy * gh.at;
+      const r = S * gh.size;
+      const a = gh.k * power;
+      const grad = ctx.createRadialGradient(gx, gy, r * (gh.ring ? 0.7 : 0), gx, gy, r);
+      grad.addColorStop(0, rgba(gh.tint, gh.ring ? 0 : a * 0.6));
+      grad.addColorStop(gh.ring ? 0.85 : 0.7, rgba(gh.tint, a));
+      grad.addColorStop(1, rgba(gh.tint, 0));
+      ctx.fillStyle = grad;
+      if (gh.hex) poly(gx, gy, r, 6, 0.25);
+      else { ctx.beginPath(); ctx.arc(gx, gy, r, 0, Math.PI * 2); }
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
 
   async function run(swap = () => {}) {
     if (off) off();
     if (prefersReducedMotion()) { await swap(); return true; }
     const W = container.clientWidth, H = container.clientHeight;
+    const scale = 0.75; // the flare is soft by nature; render under size
+    canvas.width = Math.round(W * scale);
+    canvas.height = Math.round(H * scale);
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
     const dir = o.from === 'right' ? -1 : 1;
-    root.style.setProperty('--sf-leak-blur', `${Math.round(Math.max(W, H) * 0.05)}px`);
-    blobs.forEach((b) => {
-      const s = Math.max(W, H) * b.size;
-      b.el.style.width = b.el.style.height = `${s}px`;
-      b.el.style.top = `${b.y * H - s / 2}px`;
-      b.el.style.left = `${-s / 2}px`;
-    });
-    root.style.visibility = 'visible';
+    const y0 = H * (0.3 + rand() * 0.25);
+    const y1 = H * (0.3 + rand() * 0.25);
+    canvas.style.visibility = 'visible';
     let scene = o.scene ? o.scene() : null;
     let swapped = false;
     return new Promise((done) => {
@@ -72,23 +151,18 @@ export function lightLeak(container, options = {}) {
       off = tick(async (_, dt) => {
         t += dt;
         const p = clamp(t / o.duration);
-        // Leak drift across the gate.
-        blobs.forEach((b) => {
-          const q = clamp((p - b.lag) / (1 - b.lag));
-          const x = lerp(-0.35, 1.35, Math.pow(q, 0.9) * b.speed + q * (1 - b.speed));
-          const px = (dir > 0 ? x : 1 - x) * W;
-          const breathe = 1 + Math.sin(q * Math.PI * 2 + b.y * 9) * 0.08;
-          b.el.style.transform = `translate3d(${px.toFixed(1)}px, ${(Math.sin(q * 3 + b.y * 5) * H * 0.05).toFixed(1)}px, 0) scale(${breathe.toFixed(3)})`;
-          b.el.style.opacity = (smoothstep(0, 0.18, q) * (1 - smoothstep(0.82, 1, q)) * 0.9).toFixed(3);
-        });
-        // Exposure: blooms to near-white around the cut.
-        const ex = Math.exp(-Math.pow((p - 0.48) / 0.11, 2));
-        flash.style.setProperty('--fx', `${(dir > 0 ? lerp(20, 80, p) : lerp(80, 20, p)).toFixed(1)}%`);
-        flash.style.opacity = (ex * 0.96).toFixed(3);
+        const e = travel(p);
+        const sx = W * (dir > 0 ? lerp(-0.15, 1.15, e) : lerp(1.15, -0.15, e));
+        const sy = lerp(y0, y1, e);
+        // Power swells as the source nears the centre; wash peaks at the cut.
+        const centred = 1 - Math.min(1, Math.abs(sx - W / 2) / (W * 0.65));
+        const power = smoothstep(0, 0.15, p) * (1 - smoothstep(0.85, 1, p)) * (0.55 + 0.45 * centred);
+        const wash = Math.exp(-Math.pow((p - 0.5) / 0.085, 2));
+        draw(W, H, sx, sy, power, wash);
         if (scene) {
-          scene.style.filter = ex > 0.02 ? `brightness(${(1 + ex * 1.4).toFixed(3)}) saturate(${(1 + ex * 0.5).toFixed(3)}) blur(${(ex * 3).toFixed(2)}px)` : '';
+          scene.style.filter = wash > 0.02 ? `brightness(${(1 + wash * 1.1).toFixed(3)}) contrast(${(1 - wash * 0.3).toFixed(3)})` : '';
         }
-        if (!swapped && p >= 0.48) {
+        if (!swapped && p >= 0.5) {
           swapped = true;
           if (scene) scene.style.filter = '';
           await swap();
@@ -97,7 +171,8 @@ export function lightLeak(container, options = {}) {
         if (p >= 1) {
           off(); off = null;
           if (scene) scene.style.filter = '';
-          root.style.visibility = 'hidden';
+          ctx.clearRect(0, 0, W, H);
+          canvas.style.visibility = 'hidden';
           done(true);
         }
       });
@@ -108,7 +183,7 @@ export function lightLeak(container, options = {}) {
     run,
     destroy() {
       if (off) off();
-      root.remove();
+      canvas.remove();
     },
   };
 }

@@ -60,30 +60,37 @@ holoCard('.member-card', { maxTilt: 14, lift: 24 });`,
   {
     id: 'diorama-depth',
     name: 'Diorama Depth',
-    description: 'Turns a flat card into a shadow-box: layers tagged with data-depth slide in parallax against the tilt, so the scene inside has real distance while the clip stays perfect.',
+    description: 'Turns a flat card into a shadow-box: layers slide in parallax against the tilt, and the title floats in front of the glass — breaking out of the frame — casting a shadow that lands only on the card.',
     tags: ['parallax', 'data-depth', 'tilt'],
     hint: 'Move across the card',
     file: 'src/cards/depth-card.js',
-    usage: `<div class="card">
-  <div data-depth="0">sky</div>  <div data-depth="0.5">hills</div>
-  <h3 data-depth="1">Title</h3>
+    usage: `<div class="wrap">
+  <div class="card" data-depth-surface>
+    <div data-depth="0">sky</div>  <div data-depth="0.5">hills</div>
+    <h3 data-depth="0.95" aria-hidden="true" class="shadow">Title</h3>
+  </div>
+  <h3 data-depth="1.6" data-float>Title</h3>   <!-- breaks out of the frame -->
 </div>
 
 import { depthCard } from './src/cards/depth-card.js';
-depthCard('.card', { maxTilt: 9, depth: 26 });`,
+depthCard('.wrap', { maxTilt: 10, depth: 30 });`,
     mount(stage, scope) {
-      const card = html(
+      const wrap = html(
         stage,
-        `<div class="d-diorama">
-          <div class="dio-sky" data-depth="0"></div>
-          <div class="dio-sun" data-depth="0.12"></div>
-          <svg class="dio-layer" data-depth="0.35" viewBox="0 0 400 300" preserveAspectRatio="none"><path d="M0 190 L60 150 L110 175 L170 120 L230 165 L290 130 L350 160 L400 140 L400 300 L0 300Z" fill="#6c3b56"/></svg>
-          <svg class="dio-layer" data-depth="0.6" viewBox="0 0 400 300" preserveAspectRatio="none"><path d="M0 225 L50 200 L95 215 L150 180 L210 220 L265 190 L320 214 L400 185 L400 300 L0 300Z" fill="#3d2340"/></svg>
-          <svg class="dio-layer" data-depth="0.9" viewBox="0 0 400 300" preserveAspectRatio="none"><path d="M0 260 Q 80 230 150 252 T 300 246 T 400 238 L400 300 L0 300Z" fill="#1c1022"/></svg>
-          <div class="dio-text" data-depth="1.15"><span>Chapter III</span><h4>The Long<br>Horizon</h4></div>
+        `<div class="d-dio-wrap">
+          <div class="d-diorama" data-depth-surface>
+            <div class="dio-sky" data-depth="0"></div>
+            <div class="dio-sun" data-depth="0.12"></div>
+            <svg class="dio-layer" data-depth="0.35" viewBox="0 0 400 300" preserveAspectRatio="none"><path d="M0 190 L60 150 L110 175 L170 120 L230 165 L290 130 L350 160 L400 140 L400 300 L0 300Z" fill="#6c3b56"/></svg>
+            <svg class="dio-layer" data-depth="0.6" viewBox="0 0 400 300" preserveAspectRatio="none"><path d="M0 225 L50 200 L95 215 L150 180 L210 220 L265 190 L320 214 L400 185 L400 300 L0 300Z" fill="#3d2340"/></svg>
+            <svg class="dio-layer" data-depth="0.9" viewBox="0 0 400 300" preserveAspectRatio="none"><path d="M0 260 Q 80 230 150 252 T 300 246 T 400 238 L400 300 L0 300Z" fill="#1c1022"/></svg>
+            <span class="dio-kicker" data-depth="0.9">Chapter III · 2026</span>
+            <h4 class="dio-title dio-shadow" data-depth="0.95" aria-hidden="true">The Long<br>Horizon</h4>
+          </div>
+          <h4 class="dio-title" data-depth="1.6" data-float>The Long<br><em>Horizon</em></h4>
         </div>`
       );
-      scope.use(depthCard(card));
+      scope.use(depthCard(wrap, { maxTilt: 10, depth: 30 }));
     },
   },
   {
@@ -153,29 +160,63 @@ deck.next('left');   // programmatic throw`,
   {
     id: 'dust-dissolve',
     name: 'Dust Dissolve',
-    description: 'The card disintegrates into ash. A jittered lattice cuts the live element into gap-free flakes; a noisy front sweeps across while turbulent wind curls each flake away. restore() rewinds it.',
-    tags: ['fragments', 'turbulence', 'rewind'],
+    description: 'A quiz-board clue that turns to ash when you answer it: flakes curl away on turbulent wind while the answer card condenses out of the same dust. The intact card is always the real element \u2014 no seams, ever.',
+    tags: ['interactive', 'fragments', 'condense'],
+    hint: 'Click the card to reveal the answer',
     file: 'src/cards/dust-card.js',
     usage: `import { dustCard } from './src/cards/dust-card.js';
 
-const fx = dustCard(card, { cols: 16, rows: 11, wind: -25 });
-await fx.dissolve();
-await fx.restore();`,
+const clue = dustCard(clueEl), answer = dustCard(answerEl);
+clueEl.onclick = async () => {
+  await Promise.all([clue.prepare(), answer.prepare()]);
+  clue.dissolve();
+  setTimeout(() => answer.restore(), 800);   // answer condenses from the dust
+};`,
     mount(stage, scope) {
-      const wrap = html(
-        stage,
-        `<div class="d-dust-wrap"><article class="d-profile">
-          <div class="pf-art"><i></i></div>
-          <div class="pf-body"><span>Director of Photography</span><h4>Ines Varga</h4><p>Lisbon · 14 features · 3 awards</p></div>
-        </article></div>`
-      );
-      const card = wrap.querySelector('.d-profile');
-      const fx = scope.use(dustCard(card));
+      const CLUES = [
+        { cat: 'Cinema', v: '$200', q: 'The standard number of frames per second in theatrical film', a: 'What is 24?' },
+        { cat: 'Lenses', v: '$400', q: 'This widescreen lens squeezes the image, giving flares their long horizontal streak', a: 'What is anamorphic?' },
+        { cat: 'Animation', v: '$600', q: 'The first of the twelve classic principles, it gives a bouncing ball weight', a: 'What is squash and stretch?' },
+      ];
+      const wrap = html(stage, `<div class="d-quiz"><button class="q-card"></button><button class="q-card"></button></div>`);
+      const cards = [...wrap.querySelectorAll('.q-card')];
+      const fx = cards.map((c) => scope.use(dustCard(c, { cols: 20, rows: 13, duration: 2100 })));
+      const fill = (el, clue, answer) => {
+        el.classList.toggle('is-answer', answer);
+        el.setAttribute('aria-label', answer ? `Answer: ${clue.a}` : `${clue.cat} for ${clue.v}: ${clue.q}`);
+        el.innerHTML = answer
+          ? `<span class="q-cat">${clue.cat} \u00b7 ${clue.v}</span><span class="q-label">Correct response</span><span class="q-text">${clue.a}</span>`
+          : `<span class="q-cat">${clue.cat} \u00b7 ${clue.v}</span><span class="q-text">${clue.q}</span>`;
+      };
+      let front = 0; // index of the visible card
+      let n = 0; // step: even = clue showing, odd = answer showing
+      fill(cards[0], CLUES[0], false);
+      cards[1].style.visibility = 'hidden';
+      let busy = false;
+      let touched = false;
+      const advance = async () => {
+        if (busy) return;
+        busy = true;
+        const A = front, B = 1 - front;
+        n++;
+        const clue = CLUES[Math.floor(n / 2) % CLUES.length];
+        fill(cards[B], clue, n % 2 === 1);
+        cards[B].style.visibility = 'hidden';
+        cards[B].style.zIndex = '1';
+        cards[A].style.zIndex = '2';
+        await Promise.all([fx[A].prepare(), fx[B].prepare()]);
+        const out = fx[A].dissolve();
+        await scope.wait(540);
+        const inn = fx[B].restore();
+        await Promise.all([out, inn]);
+        front = B;
+        busy = false;
+      };
+      scope.on(wrap, 'click', () => { touched = true; advance(); });
+      fx[0].prepare();
       scope.loop(async () => {
-        await Promise.all([fx.prepare(), scope.wait(1600)]);
-        await fx.dissolve();
-        await Promise.all([fx.prepare(), scope.wait(500)]);
-        await fx.restore();
+        await scope.wait(2600);
+        if (!touched) await advance();
       });
     },
   },
@@ -307,13 +348,13 @@ lensReveal('.card', { radius: 110 });`,
           <div class="reveal"><div class="ln-grid"></div><div class="ln-wire"></div><span class="ln-k">Blueprint · 01</span><h4>Pavilion</h4></div>
         </div>`
       );
-      scope.use(lensReveal(card, { radius: 95 }));
+      scope.use(lensReveal(card, { radius: Math.round(stage.clientWidth * 0.1) + 30, zoom: 1.16 }));
     },
   },
   {
     id: 'fanned-hand',
     name: 'Fanned Hand',
-    description: 'Cards held like a hand at the table, fanned on an arc. Hover one and it rises out of the hand, straightening, while neighbours lean away on springs; the hand breathes at rest. Click to select.',
+    description: 'Cards held like a hand at the table. Hover and the nearest card eases up while its neighbours make just enough room — soft, critically damped, chosen by angle so overlapping cards never flicker.',
     tags: ['arc layout', 'springs', 'falloff'],
     hint: 'Hover across the hand',
     file: 'src/cards/fan-hand.js',
@@ -328,27 +369,41 @@ hand.focus(2);`,
       scope.on(hand, 'pointerenter', () => (human = true));
       scope.on(hand, 'pointerleave', () => (human = false));
       let i = 0;
-      const seq = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1, -1];
+      // A relaxed browse: pause on a few cards, then let the hand rest.
+      const seq = [1, 2, 4, -1, 3, 5, 0, -1];
       scope.loop(async () => {
-        await scope.wait(seq[i % seq.length] === -1 ? 1600 : 420);
+        await scope.wait(seq[i % seq.length] === -1 ? 2200 : 1100);
         if (!human) fx.focus(seq[i++ % seq.length]);
       });
     },
   },
   {
     id: 'spotlight-grid',
-    name: 'Spotlight Grid',
-    description: 'One light, many surfaces: a single soft spotlight follows the pointer across the grid, every border catching it as it passes and the nearest surface glowing from within — gliding on a spring.',
-    tags: ['shared light', 'mask', 'springs'],
-    hint: 'Move across the grid',
+    name: 'In the Dark',
+    description: 'A grid lit by one searching light, in the spirit of Playdead: outside the beam everything sinks into fog, hidden notes surface only when the light finds them, shadows swing away from it and dust drifts through it.',
+    tags: ['flashlight', 'hidden content', 'fog + motes'],
+    hint: 'Take the light',
     file: 'src/cards/spotlight-grid.js',
     usage: `import { spotlightGrid } from './src/cards/spotlight-grid.js';
 
-spotlightGrid('.features', { radius: 260, color: '255,181,71' });`,
+spotlightGrid('.notes', { radius: 240 });
+// <article> \u2026 <p data-lit>Only visible in the light</p> </article>`,
     mount(stage, scope) {
-      const feats = [['Springs', '240 Hz fixed-step physics'], ['Capture', 'Frame-exact export'], ['A11y', 'Reduced motion built in'], ['Zero deps', 'One import per effect'], ['Splitter', 'Grapheme-aware text'], ['Theming', 'CSS custom properties']];
-      const grid = html(stage, `<div class="d-spotgrid">${feats.map(([t, d]) => `<article><span>✦</span><h4>${t}</h4><p>${d}</p></article>`).join('')}</div>`);
-      scope.use(spotlightGrid(grid, { radius: 230, color: '255,196,120' }));
+      const notes = [
+        ['01', 'Something is listening'],
+        ['02', 'Do not run'],
+        ['03', 'The door was never locked'],
+        ['04', 'Keep to the light'],
+        ['05', 'It remembers you'],
+        ['06', 'Breathe'],
+      ];
+      const room = html(
+        stage,
+        `<div class="d-dark">${notes
+          .map(([n, t]) => `<article><span class="dk-n">Note ${n}</span><p data-lit>${t}</p><i class="dk-mark" data-lit></i></article>`)
+          .join('')}</div>`
+      );
+      scope.use(spotlightGrid(room));
     },
   },
   {

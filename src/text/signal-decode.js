@@ -26,7 +26,7 @@ const SETS = {
 
 injectStyle(
   'sf-decode',
-  `.sf-decode{position:relative}
+  `:where(.sf-decode){position:relative}
 .sf-decode .sf-char{text-align:center;vertical-align:top}
 .sf-decode-beam{position:absolute;top:-25%;bottom:-25%;left:0;width:2px;pointer-events:none;
   background:linear-gradient(to bottom,transparent,var(--sf-beam,#fff) 30%,var(--sf-beam,#fff) 70%,transparent);

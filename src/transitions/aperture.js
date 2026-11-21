@@ -40,13 +40,21 @@ export function aperture(container, options = {}) {
   );
   defs.append(sheen);
   root.appendChild(defs);
-  const blades = Array.from({ length: o.blades }, () => {
-    const p = svg('polygon', { fill: `rgb(${o.tone.join(',')})` });
+  // The sheen is clipped to the blades themselves — it must never darken
+  // the open scene (an unclipped overlay pops on/off with the iris).
+  const clip = svg('clipPath', { id: `${gid}-c` });
+  defs.appendChild(clip);
+  const blades = Array.from({ length: o.blades }, (_, i) => {
+    const p = svg('polygon', { id: `${gid}-b${i}`, fill: `rgb(${o.tone.join(',')})` });
     root.appendChild(p);
+    clip.appendChild(svg('use', { href: `#${gid}-b${i}` }));
     return p;
   });
-  const glow = svg('rect', { x: 0, y: 0, width: '100%', height: '100%', fill: `url(#${gid}-s)` });
+  const glow = svg('rect', { x: 0, y: 0, width: '100%', height: '100%', fill: `url(#${gid}-s)`, 'clip-path': `url(#${gid}-c)` });
   root.appendChild(glow);
+  // Fine light catching the aperture's inner edge.
+  const rim = svg('polygon', { fill: 'none', stroke: 'rgba(255,240,220,0.22)', 'stroke-width': 1.2, 'stroke-linejoin': 'round' });
+  root.appendChild(rim);
   const seams = Array.from({ length: o.blades }, () => {
     const l = svg('line', { stroke: o.seam, 'stroke-width': 1.25, 'stroke-linecap': 'round' });
     root.appendChild(l);
@@ -60,6 +68,7 @@ export function aperture(container, options = {}) {
     const N = o.blades;
     const half = Math.tan(Math.PI / N) * r;
     const L = far * 3;
+    const rimPts = [];
     for (let i = 0; i < N; i++) {
       const a = spin + (i * Math.PI * 2) / N;
       const nx = Math.cos(a), ny = Math.sin(a);
@@ -77,11 +86,14 @@ export function aperture(container, options = {}) {
       blades[i].setAttribute('fill', `rgb(${o.tone.map((c) => Math.round(c * k)).join(',')})`);
       // Seam: from the leading vertex outward along the blade edge.
       const vx = Tx + tx * half, vy = Ty + ty * half;
+      rimPts.push(`${vx},${vy}`);
       seams[i].setAttribute('x1', vx);
       seams[i].setAttribute('y1', vy);
       seams[i].setAttribute('x2', vx + tx * far * 1.5);
       seams[i].setAttribute('y2', vy + ty * far * 1.5);
     }
+    rim.setAttribute('points', rimPts.join(' '));
+    rim.setAttribute('stroke-opacity', String(Math.min(1, r / 40)));
   }
 
   function phase(from, to, duration, ease, spinFrom, spinTo, geom) {

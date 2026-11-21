@@ -17,7 +17,7 @@ import { clamp, resolve, prefersReducedMotion } from '../core/utils.js';
 
 injectStyle(
   'sf-prism',
-  `.sf-prism{position:relative;isolation:isolate}
+  `:where(.sf-prism){position:relative}.sf-prism{isolation:isolate}
 .sf-prism-layer{display:block;mix-blend-mode:var(--sf-prism-blend,screen);will-change:transform}
 .sf-prism-layer+.sf-prism-layer{position:absolute;inset:0}
 .sf-prism-layer .sf-char{will-change:transform}`
